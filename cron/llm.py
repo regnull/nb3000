@@ -1,10 +1,20 @@
 import os
 from openai import OpenAI
 import json
+from typing import List, Optional, TypedDict, Literal
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY environment variable must be set")
 
-def summarize_article(article):
+class ArticleSummary(TypedDict):
+    summary: str
+    time: str
+    importance: int  # 1-10
+    keywords: List[str]
+    category: str
+
+def summarize_article(article: str) -> ArticleSummary:
     """
     Summarize an article using OpenAI API.
 
@@ -12,7 +22,11 @@ def summarize_article(article):
         article (str): The article to summarize.
 
     Returns:
-        dict: A dictionary with the summary, time, importance, and keywords of the article.
+        ArticleSummary: A dictionary with typed fields for summary, time, importance, keywords and category.
+
+    Raises:
+        RuntimeError: If there is an error processing the article with OpenAI.
+        ValueError: If the OpenAI response is missing required fields or has invalid values.
     """
     try:
         client = OpenAI(api_key=openai_api_key)
@@ -42,21 +56,35 @@ The story follows:
 
         res = response.choices[0].message.content
         res = res.replace("```json", "").replace("```", "")
-        return json.loads(res)
+        data = json.loads(res)
+        
+        # Validate response has required fields and correct types
+        if not all(k in data for k in ArticleSummary.__annotations__):
+            missing = set(ArticleSummary.__annotations__) - set(data)
+            raise ValueError(f"Response missing required fields: {missing}")
+        
+        if not isinstance(data['importance'], int) or not 1 <= data['importance'] <= 10:
+            raise ValueError(f"Importance must be int between 1-10, got: {data['importance']}")
+            
+        if not isinstance(data['keywords'], list):
+            raise ValueError(f"Keywords must be a list, got: {type(data['keywords'])}")
+            
+        return data
     except Exception as e:
-        return f"Error processing with OpenAI: {e}"
+        raise RuntimeError(f"Error processing with OpenAI: {e}")
 
-def get_text_embeddings(text):
+def get_text_embeddings(text: str) -> List[float]:
     """
     Get embeddings for a given text using OpenAI API.
 
     Args:
-        api_key (str): Your OpenAI API key.
-        model (str): The embedding model to use (e.g., 'text-embedding-ada-002').
         text (str): The text to generate embeddings for.
 
     Returns:
         list: A list of floats representing the embedding vector.
+
+    Raises:
+        RuntimeError: If there is an error generating embeddings.
     """
     try:
         client = OpenAI(api_key=openai_api_key)
@@ -66,5 +94,4 @@ def get_text_embeddings(text):
         )
         return response.data[0].embedding
     except Exception as e:
-        print(f"Error: {e}")
-        return None
+        raise RuntimeError(f"Error generating embeddings: {e}")

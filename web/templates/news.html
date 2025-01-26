@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+   <title>News Bot 3000</title>
+   <link rel="stylesheet" href="/static/styles.css">
+   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="/"><img src="/static/nb3000.png" width="314" height="75"/></a>
+        <p>AI-Powered News for a Clearer Perspective</p>
+        <p class="updated">Updated {{ update_time }} UTC</p>
+        <div class="location">
+           {{ location }}
+        </div>
+        <p>
+           <a href="{{ request.path }}?sort=time">
+           {% if sort_by == 'time' %}
+               <strong>Latest first</strong>
+           {% else %}
+               Latest first
+           {% endif %}
+           </a> |
+           <a href="{{ request.path }}?sort=importance">
+           {% if sort_by == 'importance' %}
+               <strong>Most important first</strong>
+           {% else %}
+               Most important first
+           {% endif %}
+           </a>
+        <ul class="story-list">
+            {% for story in stories %}
+            <li class="story-item">
+               <h2 class="headline"><a href="{{ story.link }}" target="_blank">{{ story.headline }}</a></h2>
+               <p class="category"><a href="/category/{{ story.category }}">{{ story.category }}</a> / {{ story.updated }} / CNN</p>
+               <p>{{ story.importance }}</p>
+               <p class="left-align">{{ story.summary }}</p>
+               <p  class="left-align">
+                   {% for keyword in story.keywords %}
+                       <a href="/keyword/{{ keyword }}"><span class="keyword-bubble">{{ keyword }}</span></a>
+                   {% endfor %}
+               </p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

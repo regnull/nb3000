@@ -1,0 +1,106 @@
+
+// <uniquifier>: Use a unique and descriptive class name
+// <weight>: Use a value from 200 to 800
+
+/*.newsreader-<uniquifier> {*/
+/*  font-family: "Newsreader", serif;*/
+/*  font-optical-sizing: auto;*/
+/*  font-weight: <weight>;*/
+/*  font-style: normal;*/
+/*}*/
+
+body {
+    font-family: "Newsreader", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: f4f4f4;
+    color: 333;
+    display: flex;
+    /*justify-content: center;*/
+    /*align-items: center;*/
+    /*height: 100vh;*/
+}
+.container {
+    position: relative;
+    width: 60%;
+    margin: 0 auto;
+    padding: 20px;
+    background: fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    /*text-align: center;*/
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+    }
+}
+
+.title {
+    text-align: center;
+    font-size: 60px;
+    color: 007BFF;
+}
+.story-list {
+    list-style: none;
+    padding: 0;
+}
+.story-item {
+    font-size: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    border-bottom: 1px solid ddd;
+}
+.headline {
+    font-size: 40px;
+    margin: 0 0 10px;
+}
+.headline a {
+    text-decoration: none;
+    color: 007BFF;
+}
+
+.headline a:hover {
+    text-decoration: underline;
+}
+
+.category {
+    text-align: left;
+    justify-content: left;
+    font-style: italic;
+}
+
+.updated {
+    text-align: left;
+    justify-content: left;
+    font-style: italic;
+}
+
+.left-align {
+    text-align: left;
+    justify-content: left;
+}
+
+.keyword-bubble {
+    display: inline-block;
+    margin: 5px 5px 0 0;
+    padding: 5px 10px;
+    background-color: #007BFF;
+    color: white;
+    border-radius: 15px;
+    font-size: 0.9em;
+}
+
+.location {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 10px;
+    font-size: 16px;
+}

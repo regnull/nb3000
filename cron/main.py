@@ -14,9 +14,6 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(script_dir, '../.env')
 load_dotenv(env_path)
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-mongo_uri = os.getenv("MONGO_URI")
-
 def fetch_cnn_lite_content():
     # URL for CNN Lite
     url = "https://lite.cnn.com/"
@@ -82,6 +79,7 @@ if __name__ == "__main__":
     run_start_time = datetime.now()
     cnn_lite_articles = fetch_cnn_lite_content()
 
+    mongo_uri = os.getenv("MONGO_URI")
     client = MongoClient(mongo_uri)
     db = client.get_database('nb3000')
     stories_col = db.get_collection('stories')
