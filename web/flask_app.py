@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, g
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import os
+
 app = Flask(__name__)
 
 def get_mongo_client():

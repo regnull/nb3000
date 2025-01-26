@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(script_dir, '../.env')
+print(f"Loading environment variables from {env_path}")
 load_dotenv(env_path)
 
 def fetch_cnn_lite_content():
