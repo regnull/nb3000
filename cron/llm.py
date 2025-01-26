@@ -3,10 +3,6 @@ from openai import OpenAI
 import json
 from typing import List, Optional, TypedDict, Literal
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY environment variable must be set")
-
 class ArticleSummary(TypedDict):
     summary: str
     time: str
@@ -28,6 +24,10 @@ def summarize_article(article: str) -> ArticleSummary:
         RuntimeError: If there is an error processing the article with OpenAI.
         ValueError: If the OpenAI response is missing required fields or has invalid values.
     """
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY environment variable must be set")
+
     try:
         client = OpenAI(api_key=openai_api_key)
         response = client.chat.completions.create(
@@ -86,6 +86,10 @@ def get_text_embeddings(text: str) -> List[float]:
     Raises:
         RuntimeError: If there is an error generating embeddings.
     """
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY environment variable must be set")
+
     try:
         client = OpenAI(api_key=openai_api_key)
         response = client.embeddings.create(
