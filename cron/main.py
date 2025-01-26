@@ -10,11 +10,6 @@ import os
 from llm import summarize_article, get_text_embeddings
 from dotenv import load_dotenv
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(script_dir, '../.env')
-print(f"Loading environment variables from {env_path}")
-load_dotenv(env_path)
-
 def fetch_cnn_lite_content():
     # URL for CNN Lite
     url = "https://lite.cnn.com/"
@@ -77,6 +72,11 @@ def fetch_url_text(url):
         return f"Error fetching URL: {e}", None
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(script_dir, '../.env')
+    print(f"Loading environment variables from {env_path}")
+    load_dotenv(env_path)
+
     run_start_time = datetime.now()
     cnn_lite_articles = fetch_cnn_lite_content()
 
