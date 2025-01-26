@@ -13,6 +13,11 @@ def get_mongo_client():
         g.mongo_client = MongoClient(uri)
     return g.mongo_client
 
+@app.after_request
+def add_header(response):
+    response.cache_control.max_age = 600
+    return response
+
 @app.route('/')
 def display_news():
     sort = request.args.get('sort')
