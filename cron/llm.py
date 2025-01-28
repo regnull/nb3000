@@ -1,9 +1,8 @@
-import os
-from openai import OpenAI
 import json
-from typing import List, Optional, TypedDict, Literal
+from typing import List, TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain.embeddings import OpenAIEmbeddings
 
 class ArticleSummary(TypedDict):
     summary: str
@@ -53,16 +52,5 @@ def get_text_embeddings(text: str) -> List[float]:
     Raises:
         RuntimeError: If there is an error generating embeddings.
     """
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY environment variable must be set")
-
-    try:
-        client = OpenAI(api_key=openai_api_key)
-        response = client.embeddings.create(
-            input=text,
-            model='text-embedding-ada-002'
-        )
-        return response.data[0].embedding
-    except Exception as e:
-        raise RuntimeError(f"Error generating embeddings: {e}")
+    embeddings = OpenAIEmbeddings()
+    return embeddings.embed_query(text)
