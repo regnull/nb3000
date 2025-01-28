@@ -38,27 +38,12 @@ def analyze_keyword(keyword: str) -> str:
         )
 
 
-    # LLM
     llm = ChatOpenAI(temperature=0, model="gpt-4o-mini").with_structured_output(
         Classification
     )
 
     response = llm.invoke(tagging_prompt.invoke({"keyword": keyword}))
     return response
-
-
-    system_template = '''Analyze the keyword and decide if it refers to a proper noun (or specific reference)
-such as a person, place, or thing, vs. a general concept or idea. If it is a proper noun, return "proper noun". 
-If it is not a proper noun, return "not a proper noun".
-'''
-    prompt_template = ChatPromptTemplate.from_messages(
-        [("system", system_template), ("user", "{keyword}")]
-    )
-
-    prompt = prompt_template.invoke({"keyword": keyword})
-
-    response = model.invoke(prompt)
-    return response.content
 
 if __name__ == "__main__":
     keywords = [

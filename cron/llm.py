@@ -2,6 +2,8 @@ import os
 from openai import OpenAI
 import json
 from typing import List, Optional, TypedDict, Literal
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 class ArticleSummary(TypedDict):
     summary: str
@@ -11,30 +13,11 @@ class ArticleSummary(TypedDict):
     category: str
 
 def summarize_article(article: str) -> ArticleSummary:
-    """
-    Summarize an article using OpenAI API.
-
-    Args:
-        article (str): The article to summarize.
-
-    Returns:
-        ArticleSummary: A dictionary with typed fields for summary, time, importance, keywords and category.
-
-    Raises:
-        RuntimeError: If there is an error processing the article with OpenAI.
-        ValueError: If the OpenAI response is missing required fields or has invalid values.
-    """
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY environment variable must be set")
-
-    try:
-        client = OpenAI(api_key=openai_api_key)
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "you are an expert journalist capable of analyzing news stories in depth "},
-                {"role": "user", "content": f'''
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
+    sys_prompt = '''
+You are an expert journalist capable of analyzing news stories in depth.
+'''
+    user_prompt = '''
  Analyze the following news story and return information about it in json format, with the following fields:
 
 * summary, one paragraph summary of the story. Do not preface it with "this story discusses..." or any other introduction.
@@ -48,30 +31,14 @@ Return only the json as described above and nothing else.
 
 The story follows:
 {article}
-                 '''}
-            ],
-            max_tokens=1000,
-            temperature=0.7
-        )
+'''
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
 
-        res = response.choices[0].message.content
-        res = res.replace("```json", "").replace("```", "")
-        data = json.loads(res)
-        
-        # Validate response has required fields and correct types
-        if not all(k in data for k in ArticleSummary.__annotations__):
-            missing = set(ArticleSummary.__annotations__) - set(data)
-            raise ValueError(f"Response missing required fields: {missing}")
-        
-        if not isinstance(data['importance'], int) or not 1 <= data['importance'] <= 10:
-            raise ValueError(f"Importance must be int between 1-10, got: {data['importance']}")
-            
-        if not isinstance(data['keywords'], list):
-            raise ValueError(f"Keywords must be a list, got: {type(data['keywords'])}")
-            
-        return data
-    except Exception as e:
-        raise RuntimeError(f"Error processing with OpenAI: {e}")
+    res = llm.invoke(prompt_template.format_messages(article=article))
+    return json.loads(res.content)
 
 def get_text_embeddings(text: str) -> List[float]:
     """
