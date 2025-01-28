@@ -1,19 +1,11 @@
-import json
-from typing import List, TypedDict
+from typing import List
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Any
-
-# class ArticleSummary(TypedDict):
-#     summary: str
-#     time: str
-#     importance: int  # 1-10
-#     keywords: List[str]
-#     category: str
 
 class ArticleSummary(BaseModel):
     summary: str = Field(description="Summary, one paragraph summary of the story. Do not preface it with 'this story discusses...' or any other introduction.")
@@ -45,7 +37,7 @@ You are an expert journalist capable of analyzing news stories in depth.
     parser = PydanticOutputParser(pydantic_object=ArticleSummary)
 
     res = llm.invoke(prompt_template.format_messages(article=article, format_instructions=parser.get_format_instructions()))
-    return parser.parse(res.content).dict()
+    return parser.parse(res.content).model_dump()
 
 def get_text_embeddings(text: str) -> List[float]:
     """
