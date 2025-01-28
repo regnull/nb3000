@@ -3,41 +3,49 @@ from typing import List, TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Any
 
-class ArticleSummary(TypedDict):
-    summary: str
-    time: str
-    importance: int  # 1-10
-    keywords: List[str]
-    category: str
+# class ArticleSummary(TypedDict):
+#     summary: str
+#     time: str
+#     importance: int  # 1-10
+#     keywords: List[str]
+#     category: str
 
-def summarize_article(article: str) -> ArticleSummary:
+class ArticleSummary(BaseModel):
+    summary: str = Field(description="Summary, one paragraph summary of the story. Do not preface it with 'this story discusses...' or any other introduction.")
+    time: datetime = Field(description="The date and time of the story")
+    importance: int = Field(description='''Importance, the story importance on 1 to 10 scale, where 10 is the most important. Anything ranked 10 would represent
+        immediate life-threatening or global crisis like war, pandemics, or climate disasters. 1 is the story of no importance to anyone.''')
+    keywords: List[str] = Field(description="The list of keywords for this story. If a company is mentioned, include the company name as a keyword.")
+    category: str = Field(description="The news category of the story")
+
+def summarize_article(article: str) -> dict[str, Any]:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
     sys_prompt = '''
 You are an expert journalist capable of analyzing news stories in depth.
 '''
     user_prompt = '''
- Analyze the following news story and return information about it in json format, with the following fields:
+        Analyze the following news story and return information about it in json format, with the following fields:
 
-* summary, one paragraph summary of the story. Do not preface it with "this story discusses..." or any other introduction.
-* time, the date and time of the story
-* importance, the story importance on 1 to 10 scale, where 10 is the most important. Anything ranked 10 would represent
-immediate life-threatening or global crisis like war, pandemics, or climate disasters. 1 is the story of no importance to anyone.
-* keywords, a list of keywords for this story. If a company is mentioned, include the company name as a keyword.
-* category, the news category of the story.
+        {format_instructions}
 
-Return only the json as described above and nothing else.
+        The story follows:
+        {article}
+    '''
 
-The story follows:
-{article}
-'''
     prompt_template = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(sys_prompt),
         HumanMessagePromptTemplate.from_template(user_prompt)
     ])
 
-    res = llm.invoke(prompt_template.format_messages(article=article))
-    return json.loads(res.content)
+    parser = PydanticOutputParser(pydantic_object=ArticleSummary)
+
+    res = llm.invoke(prompt_template.format_messages(article=article, format_instructions=parser.get_format_instructions()))
+    return parser.parse(res.content).dict()
 
 def get_text_embeddings(text: str) -> List[float]:
     """
