@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any
 
 class ArticleSummary(BaseModel):
+    title: str = Field(description="Article's title based on the content, unbiased, without spin or clickbait")
     summary: str = Field(description="Summary, one paragraph summary of the story. Do not preface it with 'this story discusses...' or any other introduction.")
     time: datetime = Field(description="The date and time of the story")
     importance: int = Field(description='''Importance, the story importance on 1 to 10 scale, where 10 is the most important. Anything ranked 10 would represent
