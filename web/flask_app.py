@@ -48,6 +48,7 @@ def display_news():
     formatted_stories = [
         {
             "headline": story.get("headline"),
+            "alt_headline": story.get("summary", {}).get("title"),
             "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
             "link": story.get("link"),
             "summary": story.get("summary", {}).get("summary"),
@@ -88,6 +89,7 @@ def display_category(category, subcategory):
     formatted_stories = [
         {
             "headline": story.get("headline"),
+            "alt_headline": story.get("summary", {}).get("title"),
             "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
             "link": story.get("link"),
             "summary": story.get("summary", {}).get("summary"),
@@ -157,6 +159,7 @@ def display_keyword(keyword):
     formatted_stories = [
         {
             "headline": story.get("headline"),
+            "alt_headline": story.get("summary", {}).get("title"),
             "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
             "link": story.get("link"),
             "summary": story.get("summary", {}).get("summary"),

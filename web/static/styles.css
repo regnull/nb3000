@@ -70,6 +70,12 @@ body {
     text-decoration: underline;
 }
 
+.alt-headline {
+    font-size: 20px;
+    font-style: italic;
+    margin: 0 0 10px;
+}
+
 .category {
     text-align: left;
     justify-content: left;
