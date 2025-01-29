@@ -19,12 +19,21 @@ class ChristianScienceMonitor:
             href = link['href']
 
             full_url = self.url + href.lstrip('/') if href.startswith("/") else href
-
-            print(full_url)
-            pattern = r"https://www\.csmonitor\.com/layout/set/text/texteditionlayout/set/text/[A-Za-z]+/[A-Za-z]+/\d{4}/\d{4}/[a-z0-9-]+"
+            pattern = r"https://www\.csmonitor\.com/layout/set/text/texteditionlayout/set/text/[A-Za-z\-]+/[A-Za-z\-]+/\d{4}/\d{4}/[a-z0-9-]+"
             if re.match(pattern, full_url):
                 parsed_url = parse_csm_url(full_url)
                 corrected_url = f'https://www.csmonitor.com/text_edition/{parsed_url["section"]}/{parsed_url["subsection"]}/{parsed_url["year"]}/{parsed_url["month_day"]}/{parsed_url["slug"]}'
+                articles.append({
+                    "headline": headline,
+                    "link": corrected_url,
+                    "source": "CSM",
+                    "updated": parsed_url["date"]
+                })
+            # No subsection
+            pattern = r"https://www\.csmonitor\.com/layout/set/text/texteditionlayout/set/text/[A-Za-z\-]+/\d{4}/\d{4}/[a-z0-9-]+"
+            if re.match(pattern, full_url):
+                parsed_url = parse_csm_url_no_sub(full_url)
+                corrected_url = f'https://www.csmonitor.com/text_edition/{parsed_url["section"]}/{parsed_url["year"]}/{parsed_url["month_day"]}/{parsed_url["slug"]}'
                 articles.append({
                     "headline": headline,
                     "link": corrected_url,
@@ -45,7 +54,7 @@ def parse_csm_url(url: str) -> dict:
     Returns:
         dict with section, subsection, year, month_day, and slug
     """
-    pattern = r"https://www\.csmonitor\.com/layout/set/text/texteditionlayout/set/text/([A-Za-z]+)/([A-Za-z]+)/(\d{4})/(\d{4})/([a-z0-9-]+)"
+    pattern = r"https://www\.csmonitor\.com/layout/set/text/texteditionlayout/set/text/([A-Za-z\-]+)/([A-Za-z\-]+)/(\d{4})/(\d{4})/([a-z0-9-]+)"
     match = re.match(pattern, url)
     if not match:
         return None
@@ -57,6 +66,29 @@ def parse_csm_url(url: str) -> dict:
         "month_day": match.group(4),    # e.g. "0128"
         "date": parse_csm_date(match.group(3), match.group(4)),
         "slug": match.group(5)          # e.g. "russia-sanctions-fashion-industry-economy"
+    }
+
+def parse_csm_url_no_sub(url: str) -> dict:
+    """
+    Parse CSM URL into its component parts.
+    
+    Args:
+        url: URL like /World/Europe/2025/0128/russia-sanctions-fashion-industry-economy
+    
+    Returns:
+        dict with section, subsection, year, month_day, and slug
+    """
+    pattern = r"https://www\.csmonitor\.com/layout/set/text/texteditionlayout/set/text/([A-Za-z\-]+)/(\d{4})/(\d{4})/([a-z0-9-]+)"
+    match = re.match(pattern, url)
+    if not match:
+        return None
+    
+    return {
+        "section": match.group(1),      # e.g. "World"
+        "year": match.group(2),         # e.g. "2025"
+        "month_day": match.group(3),    # e.g. "0128"
+        "date": parse_csm_date(match.group(2), match.group(3)),
+        "slug": match.group(4)          # e.g. "russia-sanctions-fashion-industry-economy"
     }
 
 def parse_csm_date(year: str, month_day: str) -> datetime:

@@ -54,6 +54,7 @@ def display_news():
             "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
             "keywords": story.get("summary", {}).get("keywords"),
             "category": story.get("summary", {}).get("category"),
+            "source": story.get("source"),
             "request": request
         }
         for story in stories
@@ -93,6 +94,7 @@ def display_category(category, subcategory):
             "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
             "keywords": story.get("summary", {}).get("keywords"),
             "category": story.get("summary", {}).get("category"),
+            "source": story.get("source"),
             "request": request
         }
         for story in stories
@@ -161,6 +163,7 @@ def display_keyword(keyword):
             "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
             "keywords": story.get("summary", {}).get("keywords"),
             "category": story.get("summary", {}).get("category"),
+            "source": story.get("source"),
             "request": request
         }
         for story in stories

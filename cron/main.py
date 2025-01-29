@@ -84,14 +84,14 @@ if __name__ == "__main__":
     csm = ChristianScienceMonitor()
 
     run_start_time = datetime.now()
-    # articles = fetch_cnn_lite_content()
-    articles = csm.fetch_articles()
+    articles = fetch_cnn_lite_content()
+    articles.extend(csm.fetch_articles())
     mongo_uri = os.getenv("MONGO_URI")
     client = MongoClient(mongo_uri)
     db = client.get_database('nb3000')
     stories_col = db.get_collection('stories')
 
-    print("Fetching and analyzing CNN Lite Articles...")
+    print("Fetching and analyzing stories...")
     processed_articles = []
     for article in articles:
         print(f"Processing article {article['headline']}...")
@@ -102,7 +102,7 @@ if __name__ == "__main__":
             print("article exists, skipping")
             continue
 
-        text, timestamp = fetch_url_text(article['link'], parse_timestamp=False)
+        text, timestamp = fetch_url_text(article['link'], parse_timestamp=(article["source"] == "CNN"))
         if timestamp:
             article['updated'] = timestamp
 
@@ -125,18 +125,9 @@ if __name__ == "__main__":
         article['summary']['categories'] = categories
         processed_articles.append(article)
 
-    # Sort articles by importance (highest to lowest)
-    sorted_articles = sorted(
-        processed_articles,
-        key=lambda x: x['summary']['importance'] if isinstance(x['summary'], dict) else 0,
-        reverse=True
-    )
-
-    if len(sorted_articles) > 0:
-        stories_col.insert_many(sorted_articles)
 
     keywords_col = db["keywords"]
-    for article in sorted_articles:
+    for article in processed_articles:
         for keyword in article["summary"]["keywords"]:
             print(f'processing keyword: {keyword}')
             k = keywords_col.find_one({"keyword": keyword})
@@ -146,8 +137,10 @@ if __name__ == "__main__":
             embedding = get_text_embeddings(keyword)
             keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
 
+    stories_col.insert_many(processed_articles)
+
     print("\nAdded articles:")
-    for article in sorted_articles:
+    for article in processed_articles:
         print("\n" + "="*80)
         print(f"IMPORTANCE: {article['summary'].get('importance', 'N/A')}/10")
         print(f"HEADLINE: {article['headline']}")
