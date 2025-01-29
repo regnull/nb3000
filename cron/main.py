@@ -1,14 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-from openai import OpenAI
-import json
 from pymongo.mongo_client import MongoClient
 from datetime import datetime
 import os
 import os
 from llm import summarize_article, get_text_embeddings
 from dotenv import load_dotenv
+from csm import ChristianScienceMonitor
 
 def fetch_cnn_lite_content():
     # URL for CNN Lite
@@ -37,7 +36,8 @@ def fetch_cnn_lite_content():
             if re.match(pattern, full_url):
                 articles.append({
                     "headline": headline,
-                    "link": full_url
+                    "link": full_url,
+                    "source": "CNN"
                 })
 
         return articles
@@ -46,7 +46,7 @@ def fetch_cnn_lite_content():
         print(f"An error occurred while fetching CNN Lite content: {e}")
         return []
 
-def fetch_url_text(url):
+def fetch_url_text(url, parse_timestamp=True):
     try:
         # Fetch the content of the URL
         response = requests.get(url)
@@ -55,21 +55,25 @@ def fetch_url_text(url):
         # Parse the content with BeautifulSoup
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        timestamp_element = soup.find('p', class_='timestamp--lite')
         parsed_timestamp = None
+        if parse_timestamp:
+            timestamp_element = soup.find('p', class_='timestamp--lite')
+            parsed_timestamp = None
 
-        if timestamp_element:
-            timestamp_text = timestamp_element.get_text(strip=True).replace("Updated: ", "")
-            timestamp_text = timestamp_text.strip()
-            timestamp_text = timestamp_text.replace(" EST", "").strip()
-            timestamp_format = "%I:%M %p, %a %B %d, %Y"
-            parsed_timestamp = datetime.strptime(timestamp_text, timestamp_format)
+            if timestamp_element:
+                timestamp_text = timestamp_element.get_text(strip=True).replace("Updated: ", "")
+                timestamp_text = timestamp_text.strip()
+                timestamp_text = timestamp_text.replace(" EST", "").strip()
+                timestamp_format = "%I:%M %p, %a %B %d, %Y"
+                parsed_timestamp = datetime.strptime(timestamp_text, timestamp_format)
 
         # Extract and return only the text
         text = soup.get_text(strip=True)  # strip=True removes extra whitespace
         return text, parsed_timestamp
     except requests.exceptions.RequestException as e:
         return f"Error fetching URL: {e}", None
+    
+
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -77,9 +81,11 @@ if __name__ == "__main__":
     print(f"Loading environment variables from {env_path}")
     load_dotenv(env_path)
 
-    run_start_time = datetime.now()
-    cnn_lite_articles = fetch_cnn_lite_content()
+    csm = ChristianScienceMonitor()
 
+    run_start_time = datetime.now()
+    # articles = fetch_cnn_lite_content()
+    articles = csm.fetch_articles()
     mongo_uri = os.getenv("MONGO_URI")
     client = MongoClient(mongo_uri)
     db = client.get_database('nb3000')
@@ -87,7 +93,7 @@ if __name__ == "__main__":
 
     print("Fetching and analyzing CNN Lite Articles...")
     processed_articles = []
-    for article in cnn_lite_articles:
+    for article in articles:
         print(f"Processing article {article['headline']}...")
 
         # If an article with the same headline exists, we skip.
@@ -96,8 +102,9 @@ if __name__ == "__main__":
             print("article exists, skipping")
             continue
 
-        text, timestamp = fetch_url_text(article['link'])
-        article['updated'] = timestamp
+        text, timestamp = fetch_url_text(article['link'], parse_timestamp=False)
+        if timestamp:
+            article['updated'] = timestamp
 
         summary = summarize_article(text)
         if 'Error' in summary:

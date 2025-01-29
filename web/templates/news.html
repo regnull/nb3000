@@ -37,7 +37,7 @@
             {% for story in stories %}
             <li class="story-item">
                <h2 class="headline"><a href="{{ story.link }}" target="_blank">{{ story.headline }}</a></h2>
-               <p class="category"><a href="/category/{{ story.category }}">{{ story.category }}</a> / {{ story.updated }} / CNN</p>
+               <p class="category"><a href="/category/{{ story.category }}">{{ story.category }}</a> / {{ story.updated }} / {{ story.source }}</p>
                <p>{{ story.importance }}</p>
                <p class="left-align">{{ story.summary }}</p>
                <p  class="left-align">
