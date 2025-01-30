@@ -29,19 +29,17 @@
       <p>AI-Powered News for a Clearer Perspective</p>
 
       {% if story.summary.title %}
-      <h2 class="headline"><a href="/story/{{ story._id }}" target="_blank">{{ story.summary.title }}</a></h2>
-        <p class="alt-headline">{{ story.headline }}</p> 
+      <h2 class="headline">{{ story.summary.title }}</h2>
+        <p class="alt-headline"><a href="{{ story.link }}" target="_blank">{{ story.headline }} ({{ story.source }})</a></p> 
       {% else %}
-        <h2 class="headline"><a href="{{ story.link }}" target="_blank">{{ story.headline }}</a></h2>
+        <h2 class="headline"><a href="{{ story.link }}" target="_blank">{{ story.headline }} ({{ story.source }})</a></h2>
       {% endif %}
 
       <p class="category">
         <a href="/category/{{ story.summary.category }}"
           >{{ story.summary.category }}</a
         >
-        / {{ story.updated }} / {% if story.source %}{{ story.source }}{% else
-        %}CNN{% endif %} /
-        <a href="{{ story.link }}" target="_blank">Original article</a>
+        / {{ story.updated }}
       </p>
         <button class="share-button" id="shareBtn">Share</button>
       <p>{{ importance }}</p>
