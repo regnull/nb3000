@@ -10,7 +10,7 @@
       rel="stylesheet"
     />
     <title>{{ story.headline }}</title>
-    <meta property="og:title" content="{{ story.headline }}" />
+    <meta property="og:title" content=" {% if story.summary.title %}{{ story.summary.title }}{% else %}{{ story.headline }}{% endif %}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="{{ url_for('display_story', story_id=story._id, _external=True) }}" />
     <meta property="og:image" content="{{ url_for('static', filename='nb3000.png', _external=True) }}" />
@@ -24,10 +24,13 @@
       <a href="/"><img src="/static/nb3000.png" width="314" height="75" /></a>
       <p>AI-Powered News for a Clearer Perspective</p>
 
-      <h1 class="headline">{{ story.headline }}</h1>
-      {% if story.alt_headline %}
-      <h2 class="alt-headline">{{ story.alt_headline }}</h2>
+      {% if story.summary.title %}
+      <h2 class="headline"><a href="/story/{{ story._id }}" target="_blank">{{ story.summary.title }}</a></h2>
+        <p class="alt-headline">{{ story.headline }}</p> 
+      {% else %}
+        <h2 class="headline"><a href="{{ story.link }}" target="_blank">{{ story.headline }}</a></h2>
       {% endif %}
+
       <p class="category">
         <a href="/category/{{ story.summary.category }}"
           >{{ story.summary.category }}</a
