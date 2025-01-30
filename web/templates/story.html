@@ -13,13 +13,11 @@
     <meta property="og:title" content="{% if story.summary.title %}{{ story.summary.title }}{% else %}{{ story.headline }}{% endif %}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="{{ url_for('display_story', story_id=story._id, _external=True) }}" />
-    <meta property="og:image" content="{{ url_for('static', filename='nb3000.png', _external=True) }}" />
-    <meta property="og:image:width" content="628" />
-    <meta property="og:image:height" content="150" />
-    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}" />
+    <meta name="twitter:card" content="article">
     <meta name="twitter:title" content="{% if story.summary.title %}{{ story.summary.title }}{% else %}{{ story.headline }}{% endif %}">
     <meta name="twitter:description" content="{{ story.summary.summary }}">
-    <meta name="twitter:image" content="{{ url_for('static', filename='nb3000.png', _external=True) }}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}">
   
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
