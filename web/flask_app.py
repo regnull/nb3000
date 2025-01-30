@@ -6,9 +6,8 @@ import os
 app = Flask(__name__)
 
 @app.route('/robots.txt')
-@app.route('/sitemap.xml')
-def static_from_root():
-    return send_from_directory(app.static_folder, request.path[1:])
+def serve_robots():
+    return send_from_directory('static', 'robots.txt')
 
 def get_mongo_client():
     if 'mongo_client' not in g:
