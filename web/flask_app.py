@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, g, send_from_directory
 from pymongo import MongoClient
+from bson import ObjectId
 from datetime import datetime, timedelta
 import os
 
@@ -46,6 +47,7 @@ def display_news():
     # Format stories for rendering
     formatted_stories = [
         {
+            "_id": story.get("_id"),
             "headline": story.get("headline"),
             "alt_headline": story.get("summary", {}).get("title"),
             "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
@@ -65,6 +67,15 @@ def display_news():
         sort_by=sort,
         location="main",
         update_time=last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
+
+@app.route('/story/<story_id>')
+def display_story(story_id):
+    mongo_db = get_mongo_client()["nb3000"]
+    stories_collection = mongo_db["stories"]
+    story = stories_collection.find_one({"_id": ObjectId(story_id)})
+    return render_template("story.html", 
+                           story=story, 
+                           importance="\U0001F525" * story.get("summary", {}).get("importance", 0))
 
 @app.route('/category/<category>', defaults={'subcategory': None})
 @app.route('/category/<category>/<subcategory>')

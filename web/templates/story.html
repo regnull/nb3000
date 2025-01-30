@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap"
+      rel="stylesheet"
+    />
+    <title>{{ story.headline }}</title>
+    <meta property="og:title" content="{{ story.headline }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ url_for('display_story', story_id=story._id, _external=True) }}" />
+    <meta property="og:image" content="{{ url_for('static', filename='nb3000.png') }}" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+  <body>
+    <div class="container">
+      <a href="/"><img src="/static/nb3000.png" width="314" height="75" /></a>
+      <p>AI-Powered News for a Clearer Perspective</p>
+
+      <h1 class="headline">{{ story.headline }}</h1>
+      {% if story.alt_headline %}
+      <h2 class="alt-headline">{{ story.alt_headline }}</h2>
+      {% endif %}
+      <p class="category">
+        <a href="/category/{{ story.summary.category }}"
+          >{{ story.summary.category }}</a
+        >
+        / {{ story.updated }} / {% if story.source %}{{ story.source }}{% else
+        %}CNN{% endif %} /
+        <a href="{{ story.link }}" target="_blank">Original article</a>
+      </p>
+        <button class="share-button" id="shareBtn">Share</button>
+      <p>{{ importance }}</p>
+      <p class="left-align">{{ story.summary.summary }}</p>
+      <p class="left-align">
+        {% for keyword in story.summary.keywords %}
+        <a href="/keyword/{{ keyword }}"
+          ><span class="keyword-bubble">{{ keyword }}</span></a
+        >
+        {% endfor %}
+      </p>
+    </div>
+    <script>
+      const shareButton = document.getElementById("shareBtn");
+
+      shareButton.addEventListener("click", async () => {
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: "{{ story.headline }}",
+              text: "{{ story.summary.summary }}",
+              url: window.location.href,
+            });
+            console.log("Content shared successfully");
+          } catch (err) {
+            console.error("Error sharing content:", err);
+          }
+        } else {
+          alert("Sharing is not supported in this browser.");
+        }
+      });
+    </script>
+  </body>
+</html>

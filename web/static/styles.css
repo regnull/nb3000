@@ -104,3 +104,16 @@ body {
     margin: 10px;
     font-size: 16px;
 }
+
+.share-button {
+    padding: 10px 15px;
+    background-color: white;
+    color: black;
+    border: 1px solid black;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.share-button:hover {
+    background-color: #005bb5;
+}
