@@ -6,8 +6,17 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
-   <title>News Bot 3000</title>
-   <link rel="stylesheet" href="/static/styles.css">
+   <title>NewsBot 3000</title>
+   <meta property="og:title" content="NewsBot 3000" />
+   <meta property="og:type" content="website" />
+   <meta property="og:description" content="AI-Powered News for a Clearer Perspective">
+   <meta property="og:url" content="{{ url_for('display_news', story_id=story._id, _external=True) }}" />
+   <meta property="og:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}" />
+   <meta name="twitter:card" content="website">
+   <meta name="twitter:title" content="NewsBot 3000">
+   <meta name="twitter:description" content="AI-Powered News for a Clearer Perspective">
+   <meta name="twitter:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}">
+  <link rel="stylesheet" href="/static/styles.css">
    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
