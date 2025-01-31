@@ -8,7 +8,7 @@ import os
 from llm import summarize_article, get_text_embeddings
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
-
+from npr import NPR
 def fetch_cnn_lite_content():
     # URL for CNN Lite
     url = "https://lite.cnn.com/"
@@ -81,11 +81,19 @@ if __name__ == "__main__":
     print(f"Loading environment variables from {env_path}")
     load_dotenv(env_path)
 
-    csm = ChristianScienceMonitor()
-
     run_start_time = datetime.now()
-    articles = fetch_cnn_lite_content()
+
+    # NPR
+    npr = NPR()
+    articles = npr.fetch_articles()
+
+    # Christian Science Monitor
+    csm = ChristianScienceMonitor()
     articles.extend(csm.fetch_articles())
+
+    # CNN Lite
+    articles.extend(fetch_cnn_lite_content())
+
     mongo_uri = os.getenv("MONGO_URI")
     client = MongoClient(mongo_uri)
     db = client.get_database('nb3000')
@@ -113,6 +121,11 @@ if __name__ == "__main__":
 
         article['summary'] = summary
         article['run_start_time'] = run_start_time
+        if article.get('updated') is None:
+            if article['summary'].get('time') is not None:
+                article['updated'] = article['summary']['time']
+            else:
+                article['updated'] = datetime.now()
 
         parts = article['summary']['category'].split('/')
         category = ''

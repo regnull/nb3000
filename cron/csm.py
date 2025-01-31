@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
+
 class ChristianScienceMonitor:
     def __init__(self):
         self.url = "https://www.csmonitor.com/layout/set/text/textedition"
