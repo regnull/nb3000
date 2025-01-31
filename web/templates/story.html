@@ -16,6 +16,7 @@
     <meta property="og:url" content="{{ url_for('display_story', story_id=story._id, _external=True) }}" />
     <meta property="og:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}" />
     <meta name="twitter:card" content="article">
+    <meta name="twitter:site" content="@UnfuckedNews">
     <meta name="twitter:title" content="{% if story.summary.title %}{{ story.summary.title }}{% else %}{{ story.headline }}{% endif %}">
     <meta name="twitter:description" content="{{ story.summary.summary }}">
     <meta name="twitter:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}">
