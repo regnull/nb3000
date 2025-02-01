@@ -142,6 +142,10 @@ if __name__ == "__main__":
         processed_articles.append(article)
 
 
+    if len(processed_articles) == 0:
+        print("No new articles to add")
+        exit()
+
     keywords_col = db["keywords"]
     for article in processed_articles:
         for keyword in article["summary"]["keywords"]:
