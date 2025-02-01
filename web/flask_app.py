@@ -50,7 +50,7 @@ def display_news():
             "_id": story.get("_id"),
             "headline": story.get("headline"),
             "alt_headline": story.get("summary", {}).get("title"),
-            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
+            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
             "link": story.get("link"),
             "summary": story.get("summary", {}).get("summary"),
             "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
@@ -100,7 +100,7 @@ def display_category(category, subcategory):
         {
             "headline": story.get("headline"),
             "alt_headline": story.get("summary", {}).get("title"),
-            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
+            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
             "link": story.get("link"),
             "summary": story.get("summary", {}).get("summary"),
             "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
@@ -170,7 +170,7 @@ def display_keyword(keyword):
         {
             "headline": story.get("headline"),
             "alt_headline": story.get("summary", {}).get("title"),
-            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M:%S"),
+            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
             "link": story.get("link"),
             "summary": story.get("summary", {}).get("summary"),
             "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),

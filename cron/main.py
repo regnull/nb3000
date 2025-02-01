@@ -9,6 +9,8 @@ from llm import summarize_article, get_text_embeddings
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
 from npr import NPR
+import dateparser
+
 def fetch_cnn_lite_content():
     # URL for CNN Lite
     url = "https://lite.cnn.com/"
@@ -63,9 +65,10 @@ def fetch_url_text(url, parse_timestamp=True):
             if timestamp_element:
                 timestamp_text = timestamp_element.get_text(strip=True).replace("Updated: ", "")
                 timestamp_text = timestamp_text.strip()
-                timestamp_text = timestamp_text.replace(" EST", "").strip()
-                timestamp_format = "%I:%M %p, %a %B %d, %Y"
-                parsed_timestamp = datetime.strptime(timestamp_text, timestamp_format)
+                parsed_timestamp = dateparser.parse(timestamp_text)
+                # timestamp_text = timestamp_text.replace(" EST", "").strip()
+                # timestamp_format = "%I:%M %p, %a %B %d, %Y"
+                # parsed_timestamp = datetime.strptime(timestamp_text, timestamp_format)
 
         # Extract and return only the text
         text = soup.get_text(strip=True)  # strip=True removes extra whitespace
