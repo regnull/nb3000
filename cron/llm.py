@@ -53,5 +53,8 @@ def get_text_embeddings(text: str, model: str = 'text-embedding-ada-002', dimens
     Raises:
         RuntimeError: If there is an error generating embeddings.
     """
-    embeddings = OpenAIEmbeddings(model=model, dimensions=dimensions)
+    if model == 'text-embedding-3-small':
+        embeddings = OpenAIEmbeddings(model=model, dimensions=dimensions)
+    else:
+        embeddings = OpenAIEmbeddings(model=model)
     return embeddings.embed_query(text)
