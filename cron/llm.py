@@ -9,7 +9,9 @@ from typing import Any
 
 class ArticleSummary(BaseModel):
     title: str = Field(description="Article's title based on the content, unbiased, without spin or clickbait")
-    summary: str = Field(description="Summary, one paragraph summary of the story. Do not preface it with 'this story discusses...' or any other introduction.")
+    summary: str = Field(description='''Summary, one paragraph summary of the story. Do not preface it with 
+                         'this story discusses...' or any other introduction. Never refer to 'the story' or 
+                         'the article' in the summary, just describe the content.''')
     time: datetime = Field(description="The date and time of the story")
     importance: int = Field(description='''Importance, the story importance on 1 to 10 scale, where 10 is the most important. Anything ranked 10 would represent
         immediate life-threatening or global crisis like war, pandemics, or climate disasters. 1 is the story of no importance to anyone.''')
