@@ -39,7 +39,10 @@ def display_news():
     if sort == 'time':
         cursor = cursor.sort('updated', -1)
     elif sort == 'importance':
-        cursor = cursor.sort('summary.importance', -1)
+        cursor = cursor.sort([
+            ('summary.importance', -1),
+            ('updated', -1)  # Secondary sort by time descending
+        ])
     stories = list(cursor)
 
     last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
@@ -134,7 +137,10 @@ def display_category(category, subcategory):
     if sort == 'time':
         cursor = cursor.sort('updated', -1)
     elif sort == 'importance':
-        cursor = cursor.sort('summary.importance', -1)
+        cursor = cursor.sort([
+            ('summary.importance', -1),
+            ('updated', -1)  # Secondary sort by time descending
+        ])
     stories = list(cursor)
     last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
     formatted_stories = [
@@ -204,7 +210,10 @@ def display_keyword(keyword):
     if sort == 'time':
         cursor = cursor.sort('updated', -1)
     elif sort == 'importance':
-        cursor = cursor.sort('summary.importance', -1)
+        cursor = cursor.sort([
+            ('summary.importance', -1),
+            ('updated', -1)  # Secondary sort by time descending
+        ])
     stories = list(cursor)
     last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
     formatted_stories = [
