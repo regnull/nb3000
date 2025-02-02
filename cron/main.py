@@ -121,7 +121,10 @@ if __name__ == "__main__":
         if 'Error' in summary:
             print(f"Error processing article {article['link']}: {summary}")
             continue
-
+        
+        embed_text = article['headline'] + "\n\n" + summary['summary']
+        embedding = get_text_embeddings(embed_text, model='text-embedding-3-small', dimensions=512)
+        article['embedding'] = embedding
         article['summary'] = summary
         article['run_start_time'] = run_start_time
         if article.get('updated') is None:

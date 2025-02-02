@@ -40,7 +40,7 @@ You are an expert journalist capable of analyzing news stories in depth.
     res = llm.invoke(prompt_template.format_messages(article=article, format_instructions=parser.get_format_instructions()))
     return parser.parse(res.content).model_dump()
 
-def get_text_embeddings(text: str) -> List[float]:
+def get_text_embeddings(text: str, model: str = 'text-embedding-ada-002', dimensions: int = 1536) -> List[float]:
     """
     Get embeddings for a given text using OpenAI API.
 
@@ -53,5 +53,5 @@ def get_text_embeddings(text: str) -> List[float]:
     Raises:
         RuntimeError: If there is an error generating embeddings.
     """
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(model=model, dimensions=dimensions)
     return embeddings.embed_query(text)

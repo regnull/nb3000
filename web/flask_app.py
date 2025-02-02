@@ -73,8 +73,49 @@ def display_story(story_id):
     mongo_db = get_mongo_client()["nb3000"]
     stories_collection = mongo_db["stories"]
     story = stories_collection.find_one({"_id": ObjectId(story_id)})
+    
+    pipeline = [
+        {
+            '$vectorSearch': {
+                'index': 'story_embed',
+                'path': 'embedding',
+                'queryVector': story['embedding'],
+                'numCandidates': 100,
+                'limit': 10
+            }
+        },
+        {
+            '$project': {
+                '_id': 1,
+                'summary': 1,
+                'source': 1,
+                'updated': 1,
+                'score': {
+                    '$meta': 'vectorSearchScore'
+                }
+            }
+        },
+        {
+            '$match': {
+                'score': { '$gte': 0.9 }
+            }
+        },
+        {
+            '$sort': {
+                'updated': -1
+            }
+        }
+    ]
+    similar_stories = list(stories_collection.aggregate(pipeline))
+    
+    similar_stories = [s for s in similar_stories if s['_id'] != story['_id']]
+    
+    for s in similar_stories:
+        s['updated'] = s['updated'].strftime("%Y-%m-%d %H:%M UTC")
+
     return render_template("story.html", 
                            story=story, 
+                           similar_stories=similar_stories,
                            importance="\U0001F525" * story.get("summary", {}).get("importance", 0))
 
 @app.route('/category/<category>', defaults={'subcategory': None})

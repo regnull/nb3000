@@ -52,16 +52,23 @@
         >
         {% endfor %}
       </p>
+      {% if similar_stories %}
+      <h3>Similar stories:</h3>
+      <ul>
+        {% for similar_story in similar_stories %}
+        <li><a href="/story/{{ similar_story._id }}">{{ similar_story['summary']['title'] }} ({{ similar_story['source'] }}) / {{ similar_story['updated'] }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
     </div>
     <script>
       const shareButton = document.getElementById("shareBtn");
-
       shareButton.addEventListener("click", async () => {
         if (navigator.share) {
           try {
             await navigator.share({
-              title: "{{ story.headline }}",
-              text: "{{ story.summary.summary }}",
+              title: "{{ story.headline | truncate(60) }}",
+              text: "{{ story.summary.summary | truncate(100) }}",
               url: window.location.href,
             });
             console.log("Content shared successfully");
