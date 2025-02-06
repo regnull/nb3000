@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
 from npr import NPR
 import dateparser
-
+from apnews import AssociatedPress
 def fetch_cnn_lite_content():
     # URL for CNN Lite
     url = "https://lite.cnn.com/"
@@ -93,6 +93,10 @@ if __name__ == "__main__":
     # Christian Science Monitor
     csm = ChristianScienceMonitor()
     articles.extend(csm.fetch_articles())
+    
+    # Associated Press
+    ap = AssociatedPress()
+    articles.extend(ap.fetch_articles())
 
     # CNN Lite
     articles.extend(fetch_cnn_lite_content())
@@ -121,6 +125,10 @@ if __name__ == "__main__":
         if 'Error' in summary:
             print(f"Error processing article {article['link']}: {summary}")
             continue
+        
+        if summary.get('time') is not None and summary.get('time') > datetime.now():
+            print(f"Article {article['headline']} has a future timestamp: {summary['time']}")
+            summary['time'] = datetime.now()
         
         embed_text = article['headline'] + "\n\n" + summary['summary']
         embedding = get_text_embeddings(embed_text, model='text-embedding-3-small', dimensions=512)

@@ -34,7 +34,7 @@ def display_news():
     stories_collection = mongo_db["stories"]
 
     # Fetch and sort stories by importance in descending order
-    horizon = datetime.now() - timedelta(days=3)
+    horizon = datetime.now() - timedelta(days=1)
     cursor = stories_collection.find({ "updated": {"$gt": horizon } })
     if sort == 'time':
         cursor = cursor.sort('updated', -1)
