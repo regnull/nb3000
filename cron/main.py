@@ -4,13 +4,15 @@ import re
 from pymongo.mongo_client import MongoClient
 from datetime import datetime
 import os
-import os
+import pytz
 from llm import summarize_article, get_text_embeddings
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
 from npr import NPR
 import dateparser
 from apnews import AssociatedPress
+
+
 def fetch_cnn_lite_content():
     # URL for CNN Lite
     url = "https://lite.cnn.com/"
@@ -126,9 +128,13 @@ if __name__ == "__main__":
             print(f"Error processing article {article['link']}: {summary}")
             continue
         
-        if summary.get('time') is not None and summary.get('time') > datetime.now():
-            print(f"Article {article['headline']} has a future timestamp: {summary['time']}")
-            summary['time'] = datetime.now()
+        if summary.get('time') is not None:
+            # tz = pytz.timezone('UTC')
+            # aware_dt = tz.localize(summary.get('time'))
+            aware_dt = summary.get('time')
+            if aware_dt > datetime.now(pytz.utc):
+                print(f"Article {article['headline']} has a future timestamp: {summary['time']}")
+                summary['time'] = datetime.now()
         
         embed_text = article['headline'] + "\n\n" + summary['summary']
         embedding = get_text_embeddings(embed_text, model='text-embedding-3-small', dimensions=512)
