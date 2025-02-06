@@ -118,7 +118,7 @@ if __name__ == "__main__":
         if stories_col.find_one({ "headline": article["headline"] }):
             print("article exists, skipping")
             continue
-
+        
         text, timestamp = fetch_url_text(article['link'], parse_timestamp=(article["source"] == "CNN"))
         if timestamp:
             article['updated'] = timestamp
@@ -126,6 +126,10 @@ if __name__ == "__main__":
         summary = summarize_article(text)
         if 'Error' in summary:
             print(f"Error processing article {article['link']}: {summary}")
+            continue
+        
+        if summary['language'].lower() != 'english':
+            print(f"Article {article['headline']} is not in English, skipping")
             continue
         
         if summary.get('time') is not None:

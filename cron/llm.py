@@ -17,6 +17,7 @@ class ArticleSummary(BaseModel):
         immediate life-threatening or global crisis like war, pandemics, or climate disasters. 1 is the story of no importance to anyone.''')
     keywords: List[str] = Field(description="The list of keywords for this story. If a company is mentioned, include the company name as a keyword.")
     category: str = Field(description="The news category of the story")
+    language: str = Field(description="The language of the story")
 
 def summarize_article(article: str) -> dict[str, Any]:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
