@@ -61,3 +61,4 @@ def get_text_embeddings(text: str, model: str = 'text-embedding-ada-002', dimens
     else:
         embeddings = OpenAIEmbeddings(model=model)
     return embeddings.embed_query(text)
+

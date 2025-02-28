@@ -68,9 +68,6 @@ def fetch_url_text(url, parse_timestamp=True):
                 timestamp_text = timestamp_element.get_text(strip=True).replace("Updated: ", "")
                 timestamp_text = timestamp_text.strip()
                 parsed_timestamp = dateparser.parse(timestamp_text)
-                # timestamp_text = timestamp_text.replace(" EST", "").strip()
-                # timestamp_format = "%I:%M %p, %a %B %d, %Y"
-                # parsed_timestamp = datetime.strptime(timestamp_text, timestamp_format)
 
         # Extract and return only the text
         text = soup.get_text(strip=True)  # strip=True removes extra whitespace
@@ -133,8 +130,6 @@ if __name__ == "__main__":
             continue
         
         if summary.get('time') is not None:
-            # tz = pytz.timezone('UTC')
-            # aware_dt = tz.localize(summary.get('time'))
             aware_dt = summary.get('time')
             if aware_dt > datetime.now(pytz.utc):
                 print(f"Article {article['headline']} has a future timestamp: {summary['time']}")
@@ -191,3 +186,11 @@ if __name__ == "__main__":
         print(f"CATEGORY: {article['summary'].get('category', 'N/A')}")
         print(f"KEYWORDS: {', '.join(article['summary'].get('keywords', []))}")
 
+def process_keyword(keyword: str):
+    print(f'processing keyword: {keyword}')
+    k = keywords_col.find_one({"keyword": keyword})
+    if k is not None:
+        print(f"Keyword {keyword} already exists")
+        return
+    embedding = get_text_embeddings(keyword)
+    keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
