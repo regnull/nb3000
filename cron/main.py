@@ -116,6 +116,10 @@ if __name__ == "__main__":
             print("article exists, skipping")
             continue
         
+        if stories_col.find_one({ "link": article["link"] }):
+            print("article exists, skipping")
+            continue
+        
         text, timestamp = fetch_url_text(article['link'], parse_timestamp=(article["source"] == "CNN"))
         if timestamp:
             article['updated'] = timestamp
@@ -157,7 +161,6 @@ if __name__ == "__main__":
         article['summary']['categories'] = categories
         processed_articles.append(article)
 
-
     if len(processed_articles) == 0:
         print("No new articles to add")
         exit()
@@ -174,7 +177,9 @@ if __name__ == "__main__":
             keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
 
     stories_col.insert_many(processed_articles)
-
+    topics_col = db["topics"]
+    topics_col.insert_many(processed_articles)
+    
     print("\nAdded articles:")
     for article in processed_articles:
         print("\n" + "="*80)
@@ -185,6 +190,7 @@ if __name__ == "__main__":
         print(f"TIME: {article['summary'].get('time', 'N/A')}")
         print(f"CATEGORY: {article['summary'].get('category', 'N/A')}")
         print(f"KEYWORDS: {', '.join(article['summary'].get('keywords', []))}")
+        
 
 def process_keyword(keyword: str):
     print(f'processing keyword: {keyword}')
