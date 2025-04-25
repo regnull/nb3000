@@ -1,17 +1,57 @@
-import requests
-from bs4 import BeautifulSoup
 import re
-from pymongo.mongo_client import MongoClient
-from datetime import datetime
 import os
 import pytz
+import pprint
+import requests
+import dateparser
+
+from bs4 import BeautifulSoup
+from pymongo.mongo_client import MongoClient
+from pymongo.collection import Collection
+from bson import ObjectId
+from datetime import datetime
 from llm import summarize_article, get_text_embeddings
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
 from npr import NPR
-import dateparser
 from apnews import AssociatedPress
 
+def find_similar_stories(embedding: list[float], stories_col: Collection):
+    pipeline = [
+        {
+            '$vectorSearch': {
+                'index': 'story_embed',
+                'path': 'embedding',
+                'queryVector': embedding,
+                'numCandidates': 100,
+                'limit': 10
+            }
+        },
+        {
+            '$project': {
+                '_id': 1,
+                'summary': 1,
+                'source': 1,
+                'updated': 1,
+                'score': {
+                    '$meta': 'vectorSearchScore'
+                }
+            }
+        },
+        {
+            '$match': {
+                'score': { '$gte': 0.9 }
+            }
+        },
+        {
+            '$sort': {
+                'score': -1
+            }
+        }
+    ]
+    similar_stories = list(stories_col.aggregate(pipeline))
+    # similar_stories = [s for s in similar_stories if s['_id'] != story['_id']]
+    return similar_stories
 
 def fetch_cnn_lite_content():
     # URL for CNN Lite
@@ -75,7 +115,6 @@ def fetch_url_text(url, parse_timestamp=True):
     except requests.exceptions.RequestException as e:
         return f"Error fetching URL: {e}", None
     
-
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -176,9 +215,15 @@ if __name__ == "__main__":
             embedding = get_text_embeddings(keyword)
             keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
 
-    stories_col.insert_many(processed_articles)
+    # Add stories and topics
     topics_col = db["topics"]
-    topics_col.insert_many(processed_articles)
+    for article in processed_articles:
+        similar_stories = find_similar_stories(article['embedding'], stories_col)
+        print(f"Similar stories >>>\n")
+        pprint.pprint(similar_stories)
+        topics_col.insert_one(article)
+        id = stories_col.insert_one(article).inserted_id        
+        article['topic'] = id
     
     print("\nAdded articles:")
     for article in processed_articles:
@@ -200,3 +245,4 @@ def process_keyword(keyword: str):
         return
     embedding = get_text_embeddings(keyword)
     keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
+
