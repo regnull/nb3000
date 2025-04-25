@@ -44,6 +44,16 @@ class AssociatedPress:
                         "source": "Associated Press"
                     })
 
+            # Remove duplicate articles by using a set to track unique URLs
+            unique_urls = set()
+            unique_articles = []
+            
+            for article in articles:
+                if article['link'] not in unique_urls:
+                    unique_urls.add(article['link'])
+                    unique_articles.append(article)
+            
+            articles = unique_articles
             return articles
 
         except requests.exceptions.RequestException as e:

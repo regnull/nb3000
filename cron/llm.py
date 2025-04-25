@@ -62,3 +62,39 @@ def get_text_embeddings(text: str, model: str = 'text-embedding-ada-002', dimens
         embeddings = OpenAIEmbeddings(model=model)
     return embeddings.embed_query(text)
 
+def summarize_stories(stories: list[dict]) -> dict:
+    # Sort stories by date (most recent first)
+    sorted_stories = sorted(
+        stories,
+        key=lambda story: story.get('updated', datetime.min.replace(tzinfo=pytz.UTC)),
+        reverse=True
+    )
+    
+    articles = map(lambda s: f"ARTICLE {i+1}:\n" + s['updated'].strftime('%Y-%m-%d %H:%M:%S') + 
+                   "\n" + s['headline'] + "\n" + s['summary']['summary'], sorted_stories)
+        
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
+    sys_prompt = '''
+You are an expert journalist capable of analyzing news stories in depth.
+'''
+    user_prompt = '''
+        You are given several articles on the same subject. The articles are sorted by recency,
+        with the most recent article first. Your job is to summarize the articles and return
+        the information in the format described below.
+        The time of the summary must be the time of the most recent article.
+
+        {format_instructions}
+
+        The articles follow:
+        {articles}
+    '''
+    
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+
+    parser = PydanticOutputParser(pydantic_object=ArticleSummary)
+
+    res = llm.invoke(prompt_template.format_messages(articles=articles, format_instructions=parser.get_format_instructions()))
+    return parser.parse(res.content).model_dump()

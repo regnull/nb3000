@@ -10,11 +10,19 @@ from pymongo.mongo_client import MongoClient
 from pymongo.collection import Collection
 from bson import ObjectId
 from datetime import datetime
-from llm import summarize_article, get_text_embeddings
+from llm import summarize_article, get_text_embeddings, summarize_stories
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
 from npr import NPR
 from apnews import AssociatedPress
+
+def merge_stories(stories: list[dict], story: dict):
+    for s in stories:
+        if s['_id'] == story['_id']:
+            continue
+        story['headline'] += "\n\n" + s['headline']
+        story['summary'] += "\n\n" + s['summary']
+    return story
 
 def find_similar_stories(embedding: list[float], stories_col: Collection):
     pipeline = [
@@ -214,16 +222,36 @@ if __name__ == "__main__":
                 continue
             embedding = get_text_embeddings(keyword)
             keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
-
+ 
     # Add stories and topics
     topics_col = db["topics"]
     for article in processed_articles:
         similar_stories = find_similar_stories(article['embedding'], stories_col)
+        # Filter out stories that don't have a topic
+        similar_stories = [s for s in similar_stories if s.get('topic') is not None]
         print(f"Similar stories >>>\n")
         pprint.pprint(similar_stories)
-        topics_col.insert_one(article)
-        id = stories_col.insert_one(article).inserted_id        
-        article['topic'] = id
+        if len(similar_stories) > 0:
+            topic_id = similar_stories[0]['topic']
+            summary = summarize_stories(similar_stories + [article])
+            # Make sure all the stories refer to the same topic
+            for article in similar_stories:
+                stories_col.update_one({ "_id": article['_id'] }, { "$set": { "topic": topic_id } })
+            article['topic'] = topic_id
+            article_id = stories_col.insert_one(article).inserted_id
+            topics_col.update_one({ "_id": topic_id }, { "$set": 
+                { 
+                    "updated": datetime.now(),
+                    "source": "multiple",
+                    "stories": map(lambda s: s['_id'], similar_stories + [article]),
+                    "summary": summary
+                } 
+            })
+        else:
+            topic_id = topics_col.insert_one(article).inserted_id
+            article['topic'] = topic_id
+            article_id = stories_col.insert_one(article).inserted_id
+            topics_col.update_one({ "_id": topic_id }, { "$push": { "stories": article_id } })
     
     print("\nAdded articles:")
     for article in processed_articles:
