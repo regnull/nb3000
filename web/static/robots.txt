@@ -1,6 +1,5 @@
 User-agent: *
-Allow: /
-Disallow: /keyword
-
-User-agent: MJ12bot
 Disallow: /
+
+User-agent: Googlebot
+Disallow:
