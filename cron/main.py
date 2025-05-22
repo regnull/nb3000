@@ -132,21 +132,20 @@ if __name__ == "__main__":
 
     run_start_time = datetime.now()
 
-    # # NPR
-    # npr = NPR()
-    # articles = npr.fetch_articles()
+    # NPR
+    npr = NPR()
+    articles = npr.fetch_articles()
 
-    # # Christian Science Monitor
-    # csm = ChristianScienceMonitor()
-    # articles.extend(csm.fetch_articles())
+    # Christian Science Monitor
+    csm = ChristianScienceMonitor()
+    articles.extend(csm.fetch_articles())
     
-    # # Associated Press
-    # ap = AssociatedPress()
-    # articles.extend(ap.fetch_articles())
+    # Associated Press
+    ap = AssociatedPress()
+    articles.extend(ap.fetch_articles())
 
     # CNN Lite
-    articles = fetch_cnn_lite_content()
-    # articles.extend(fetch_cnn_lite_content())
+    articles.extend(fetch_cnn_lite_content())
 
     mongo_uri = os.getenv("MONGO_URI")
     client = MongoClient(mongo_uri)
