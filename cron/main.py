@@ -84,14 +84,14 @@ def fetch_cnn_lite_content():
 
             # Only append articles matching the CNN Lite DG pattern
             # Pattern: lite.cnn.com followed by section and -dg suffix
-            pattern = r"https://lite\.cnn\.com/\d{4}/\d{2}/\d{2}/[a-z-]+/[a-z0-9-]+/index\.html"
+            pattern = r"https://lite\.cnn\.com/\d{4}/\d{2}/\d{2}/[a-z-]+/[a-z0-9-]+"
             if re.match(pattern, full_url):
                 articles.append({
                     "headline": headline,
                     "link": full_url,
                     "source": "CNN"
                 })
-
+                
         return articles
 
     except requests.exceptions.RequestException as e:
@@ -132,20 +132,21 @@ if __name__ == "__main__":
 
     run_start_time = datetime.now()
 
-    # NPR
-    npr = NPR()
-    articles = npr.fetch_articles()
+    # # NPR
+    # npr = NPR()
+    # articles = npr.fetch_articles()
 
-    # Christian Science Monitor
-    csm = ChristianScienceMonitor()
-    articles.extend(csm.fetch_articles())
+    # # Christian Science Monitor
+    # csm = ChristianScienceMonitor()
+    # articles.extend(csm.fetch_articles())
     
-    # Associated Press
-    ap = AssociatedPress()
-    articles.extend(ap.fetch_articles())
+    # # Associated Press
+    # ap = AssociatedPress()
+    # articles.extend(ap.fetch_articles())
 
     # CNN Lite
-    articles.extend(fetch_cnn_lite_content())
+    articles = fetch_cnn_lite_content()
+    # articles.extend(fetch_cnn_lite_content())
 
     mongo_uri = os.getenv("MONGO_URI")
     client = MongoClient(mongo_uri)
