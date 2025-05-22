@@ -223,6 +223,7 @@ def display_keyword(keyword):
     last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
     formatted_stories = [
         {
+            "_id": story.get("_id"),
             "headline": story.get("headline"),
             "alt_headline": story.get("summary", {}).get("title"),
             "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
