@@ -14,7 +14,7 @@ def main():
     client = MongoClient(mongo_uri)
     db = client.get_database('nb3000')
     stories_col = db.get_collection('stories')
-    story = stories_col.find_one({"_id": ObjectId('68096bffbe2df70fedf16f08')})
+    story = stories_col.find_one({"_id": ObjectId('68306b7d96735d46299476c5')})
     
     pipeline = [
         {
