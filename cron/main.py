@@ -41,6 +41,7 @@ def find_similar_stories(embedding: list[float], stories_col: Collection):
                 'summary': 1,
                 'source': 1,
                 'updated': 1,
+                'topic': 1,
                 'score': {
                     '$meta': 'vectorSearchScore'
                 }
