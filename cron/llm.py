@@ -1,11 +1,11 @@
-from typing import List
+import pytz
+from typing import List, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Any
 
 class ArticleSummary(BaseModel):
     title: str = Field(description="Article's title based on the content, unbiased, without spin or clickbait")
@@ -18,6 +18,19 @@ class ArticleSummary(BaseModel):
     keywords: List[str] = Field(description="The list of keywords for this story. If a company is mentioned, include the company name as a keyword.")
     category: str = Field(description="The news category of the story")
     language: str = Field(description="The language of the story")
+
+def _ensure_serializable_for_mongo(data: Any) -> Any:
+    """
+    Recursively converts map objects to lists within a data structure.
+    This helps ensure data is BSON-serializable for MongoDB.
+    """
+    if isinstance(data, map):
+        return list(data)
+    elif isinstance(data, dict):
+        return {k: _ensure_serializable_for_mongo(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_ensure_serializable_for_mongo(elem) for elem in data]
+    return data
 
 def summarize_article(article: str) -> dict[str, Any]:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
@@ -41,7 +54,8 @@ You are an expert journalist capable of analyzing news stories in depth.
     parser = PydanticOutputParser(pydantic_object=ArticleSummary)
 
     res = llm.invoke(prompt_template.format_messages(article=article, format_instructions=parser.get_format_instructions()))
-    return parser.parse(res.content).model_dump()
+    parsed_data = parser.parse(res.content).model_dump()
+    return _ensure_serializable_for_mongo(parsed_data)
 
 def get_text_embeddings(text: str, model: str = 'text-embedding-ada-002', dimensions: int = 1536) -> List[float]:
     """
@@ -66,13 +80,15 @@ def summarize_stories(stories: list[dict]) -> dict:
     # Sort stories by date (most recent first)
     sorted_stories = sorted(
         stories,
-        key=lambda story: story.get('updated', datetime.min.replace(tzinfo=pytz.UTC)),
+        key=lambda story: (lambda dt_val: dt_val.replace(tzinfo=pytz.UTC) if isinstance(dt_val, datetime) and dt_val.tzinfo is None else dt_val)(story.get('updated', datetime.min.replace(tzinfo=pytz.UTC))),
         reverse=True
     )
-    
-    articles = map(lambda s: f"ARTICLE {i+1}:\n" + s['updated'].strftime('%Y-%m-%d %H:%M:%S') + 
-                   "\n" + s['headline'] + "\n" + s['summary']['summary'], sorted_stories)
-        
+
+    articles = "\n\n".join(
+        f"ARTICLE {i+1}:\n{s['updated'].strftime('%Y-%m-%d %H:%M:%S')}\n{s['headline']}\n{s['summary']['summary']}"
+        for i, s in enumerate(sorted_stories)
+    )
+
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
     sys_prompt = '''
 You are an expert journalist capable of analyzing news stories in depth.
@@ -97,4 +113,5 @@ You are an expert journalist capable of analyzing news stories in depth.
     parser = PydanticOutputParser(pydantic_object=ArticleSummary)
 
     res = llm.invoke(prompt_template.format_messages(articles=articles, format_instructions=parser.get_format_instructions()))
-    return parser.parse(res.content).model_dump()
+    parsed_data = parser.parse(res.content).model_dump()
+    return _ensure_serializable_for_mongo(parsed_data)

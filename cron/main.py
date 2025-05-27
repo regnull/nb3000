@@ -42,6 +42,7 @@ def find_similar_stories(embedding: list[float], stories_col: Collection):
                 'source': 1,
                 'updated': 1,
                 'topic': 1,
+                'headline': 1,
                 'score': {
                     '$meta': 'vectorSearchScore'
                 }
@@ -230,21 +231,26 @@ if __name__ == "__main__":
         similar_stories = find_similar_stories(article['embedding'], stories_col)
         # Filter out stories that don't have a topic
         similar_stories = [s for s in similar_stories if s.get('topic') is not None]
-        print(f"Similar stories >>>\n")
-        pprint.pprint(similar_stories)
         if len(similar_stories) > 0:
             topic_id = similar_stories[0]['topic']
             summary = summarize_stories(similar_stories + [article])
             # Make sure all the stories refer to the same topic
-            for article in similar_stories:
-                stories_col.update_one({ "_id": article['_id'] }, { "$set": { "topic": topic_id } })
+            for a in similar_stories:
+                stories_col.update_one({ "_id": a['_id'] }, { "$set": { "topic": topic_id } })
             article['topic'] = topic_id
             article_id = stories_col.insert_one(article).inserted_id
+            ids = list(map(lambda s: s['_id'], similar_stories))
+            pprint.pprint(ids)
+            ids += [article['_id']]
+            pprint.pprint(ids)
+            print(f"summarized topic: {topic_id}")
+            pprint.pprint(summary)
+            pprint.pprint(ids)
             topics_col.update_one({ "_id": topic_id }, { "$set": 
                 { 
                     "updated": datetime.now(),
                     "source": "multiple",
-                    "stories": map(lambda s: s['_id'], similar_stories + [article]),
+                    "stories": ids,
                     "summary": summary
                 } 
             })
