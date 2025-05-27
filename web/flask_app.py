@@ -14,6 +14,11 @@ def inject_current_year():
 def serve_robots():
     return send_from_directory('static', 'robots.txt')
 
+@app.route('/ads.txt')
+def serve_ads():
+    return send_from_directory('static', 'ads.txt')
+
+
 def get_mongo_client():
     if 'mongo_client' not in g:
         uri = os.getenv("MONGO_URI")
