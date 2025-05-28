@@ -19,19 +19,6 @@ class ArticleSummary(BaseModel):
     category: str = Field(description="The news category of the story")
     language: str = Field(description="The language of the story")
 
-def _ensure_serializable_for_mongo(data: Any) -> Any:
-    """
-    Recursively converts map objects to lists within a data structure.
-    This helps ensure data is BSON-serializable for MongoDB.
-    """
-    if isinstance(data, map):
-        return list(data)
-    elif isinstance(data, dict):
-        return {k: _ensure_serializable_for_mongo(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [_ensure_serializable_for_mongo(elem) for elem in data]
-    return data
-
 def summarize_article(article: str) -> dict[str, Any]:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1000)
     sys_prompt = '''
@@ -55,7 +42,7 @@ You are an expert journalist capable of analyzing news stories in depth.
 
     res = llm.invoke(prompt_template.format_messages(article=article, format_instructions=parser.get_format_instructions()))
     parsed_data = parser.parse(res.content).model_dump()
-    return _ensure_serializable_for_mongo(parsed_data)
+    return parsed_data
 
 def get_text_embeddings(text: str, model: str = 'text-embedding-ada-002', dimensions: int = 1536) -> List[float]:
     """
@@ -114,4 +101,10 @@ You are an expert journalist capable of analyzing news stories in depth.
 
     res = llm.invoke(prompt_template.format_messages(articles=articles, format_instructions=parser.get_format_instructions()))
     parsed_data = parser.parse(res.content).model_dump()
-    return _ensure_serializable_for_mongo(parsed_data)
+    
+    print("\n\nSummarizing stories:")
+    print(articles)
+    print("\nSummarized stories:")
+    print(parsed_data)
+    
+    return parsed_data

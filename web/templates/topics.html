@@ -42,11 +42,11 @@
         }
         .topic-item {
             background-color: #fff;
-            border: 1px solid #ddd;
+            /* border: 1px solid #ddd; */ /* Border removed */
             border-radius: 5px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */ /* Box shadow removed */
         }
         .topic-title {
             font-size: 1.8em;
@@ -172,8 +172,10 @@
                 <h2 class="topic-title">{{ topic.title }}</h2>
             {% endif %}
             <div class="topic-meta">
-                <span>{{ topic.updated }}</span> | 
-                <span>{{ topic.source }}</span> | 
+                <span>{{ topic.updated }}</span> |
+                {% if topic.source and topic.source.lower() != 'multiple' %}
+                <span>{{ topic.source }}</span> |
+                {% endif %}
                 <span><a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span> |
                 <span>{{ topic.importance if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
             </div>
