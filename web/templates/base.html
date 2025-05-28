@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My News Site{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script> {# Replace with local setup if you have one #}
+    <style>
+        /* Custom styles can go here if needed */
+        .nav-active {
+            font-weight: bold;
+            /* Add any other active link styling */
+        }
+        .truncate-3-lines {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+    <nav class="bg-gray-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{{ url_for('display_news') }}" class="text-xl font-bold hover:text-gray-300">NewsAgg</a>
+            <ul class="flex space-x-4">
+                <li><a href="{{ url_for('display_news') }}" class="hover:text-gray-300 {% if location == 'main' %}nav-active{% endif %}">Home</a></li>
+                <li><a href="{{ url_for('display_topics') }}" class="hover:text-gray-300 {% if location == 'topics' %}nav-active{% endif %}">Topics</a></li>
+                {# Add other navigation links here #}
+            </ul>
+        </div>
+    </nav>
+
+    <main role="main" class="container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-700 text-white text-center p-4 mt-8">
+        <p>&copy; {{ current_year }} My News Site. All rights reserved.</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

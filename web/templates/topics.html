@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+    <title>News Topics - NewsBot 3000</title>
+    <meta property="og:title" content="News Topics - NewsBot 3000" />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="AI-Powered News Topics for a Clearer Perspective">
+    <meta property="og:url" content="{{ url_for('display_topics', _external=True) }}" />
+    <meta property="og:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}" />
+    <meta name="twitter:card" content="website">
+    <meta name="twitter:title" content="News Topics - NewsBot 3000">
+    <meta name="twitter:description" content="AI-Powered News Topics for a Clearer Perspective">
+    <meta name="twitter:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2765634069655730"
+     crossorigin="anonymous"></script>
+    <style>
+        .truncate-3-lines {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        body {
+            font-family: 'Newsreader', serif;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .updated {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .topic-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .topic-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .topic-meta {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .topic-summary-text {
+            font-size: 1em;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .keywords-container {
+            margin-bottom: 15px;
+        }
+        .keyword-bubble {
+            display: inline-block;
+            background-color: #f0f0f0;
+            border-radius: 15px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            color: #555;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            text-decoration: none;
+        }
+        .keyword-bubble:hover {
+            background-color: #e0e0e0;
+        }
+        .articles-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .article-item {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .article-headline a {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #0056b3;
+            text-decoration: none;
+        }
+        .article-headline a:hover {
+            text-decoration: underline;
+        }
+        .article-alt-headline {
+            font-size: 0.9em;
+            color: #555;
+        }
+        .article-meta {
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .article-summary {
+            font-size: 0.95em;
+            color: #444;
+            margin-top: 5px;
+        }
+        .read-more-link {
+            font-size: 0.9em;
+            color: #0056b3;
+            text-decoration: none;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        .read-more-link:hover {
+            text-decoration: underline;
+        }
+         .nav-links {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            text-align: center; /* Center the nav links */
+        }
+        .nav-links a {
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 1.1em;
+            color: #0056b3;
+        }
+        .nav-links a.nav-active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <a href="/"><img src="/static/nb3000.png" width="314" height="75" alt="NewsBot 3000 Logo" style="display: block;"/></a>
+            <p style="font-size: 1.1em; margin-top: 5px; margin-bottom: 10px;">AI-Powered News for a Clearer Perspective</p>
+        </div>
+        {# <div class="nav-links">
+            <a href="{{ url_for('display_news') }}" class="{% if location == 'main' %}nav-active{% endif %}">Home</a>
+            <a href="{{ url_for('display_topics') }}" class="{% if location == 'topics' %}nav-active{% endif %}">Topics</a>
+        </div> #}
+        <p class="updated">Topics updated within the last 48 hours. Last batch run: {{ update_time }} UTC</p>
+
+    {% if topics %}
+        {% for topic in topics %}
+        <div class="topic-item">
+            {% if topic.article_count == 1 and topic.articles %}
+                <h2 class="topic-title">
+                    <a href="{{ url_for('display_story', story_id=topic.articles[0]._id) }}" style="color: blue; text-decoration: none;" class="hover:underline">
+                        {{ topic.title }}
+                    </a>
+                </h2>
+            {% else %}
+                <h2 class="topic-title">{{ topic.title }}</h2>
+            {% endif %}
+            <div class="topic-meta">
+                <span>Last Updated: {{ topic.updated }}</span> | 
+                <span>Source: {{ topic.source }}</span> | 
+                <span>Category: <a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span> |
+                <span>Importance: {{ topic.importance if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
+            </div>
+            
+            <p class="topic-summary-text">{{ topic.summary_text }}</p>
+
+            {% if topic.keywords %}
+            <div class="keywords-container">
+                <span style="font-weight: bold;">Keywords:</span>
+                {% for keyword in topic.keywords %}
+                <a href="{{ url_for('display_keyword', keyword=keyword) }}" class="keyword-bubble">{{ keyword }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# Only show full articles list if there are more than one #}
+            {% if topic.article_count > 1 %}
+            {# <h3 class="articles-header">Articles in this Topic:</h3> #}
+            <div class="articles-container" style="margin-top: 15px;">
+                {% for article in topic.articles %}
+                <div class="article-item" style="padding: 10px;">
+                    <h4 class="article-headline" style="font-size: 1.1em; margin-bottom: 5px;">
+                        <a href="{{ url_for('display_story', story_id=article._id) }}" rel="noopener noreferrer">
+                            {{ article.headline }}
+                        </a>
+                    </h4>
+                    <div class="article-meta" style="font-size: 0.85em;">
+                        <span>{{ article.source }}</span> | <span>{{ article.updated }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <p>No articles found for this topic.</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; padding: 40px 0;">No topics found matching your criteria.</p>
+    {% endif %}
+    </div>
+</body>
+<footer>
+    <p style="text-align: center;">Copyright &copy; {{ current_year }} Teralyt Software LLC</p>
+</footer>
+</html> 
