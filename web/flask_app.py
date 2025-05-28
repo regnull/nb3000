@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime, timedelta
 import os
+import dateparser
 
 app = Flask(__name__)
 
@@ -248,6 +249,86 @@ def display_keyword(keyword):
         sort_by=sort,
         location="keyword/" + keyword,
         update_time=last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
+
+@app.route('/topics')
+def display_topics():
+    mongo_db = get_mongo_client()["nb3000"]
+    topics_collection = mongo_db["topics"]
+    stories_collection = mongo_db["stories"]
+
+    # Define the time horizon for fetching topics (last 48 hours)
+    horizon = datetime.now() - timedelta(hours=48)
+
+    # Fetch topics sorted by last updated time, filtered by the horizon
+    topics_cursor = topics_collection.find(
+        {'updated': {'$gte': horizon}}
+    ).sort('updated', -1).allow_disk_use(True) # -1 for descending
+    
+    processed_topics = []
+    for topic in topics_cursor:
+        # For each topic, fetch its articles
+        article_ids = topic.get('stories', [])
+        if not article_ids: # Skip if a topic somehow has no story IDs
+            continue
+        
+        # Ensure article_ids are ObjectIds if they aren't already (they should be)
+        object_id_article_ids = [ObjectId(id_val) for id_val in article_ids]
+        
+        articles_cursor = stories_collection.find({
+            '_id': { '$in': object_id_article_ids }
+        }).sort('updated', -1) # Sort articles within a topic by their update time
+        
+        articles_in_topic = list(articles_cursor)
+        
+        # Format articles for display (similar to other routes)
+        formatted_articles = []
+        for article in articles_in_topic:
+            formatted_articles.append({
+                "_id": article.get("_id"),
+                "headline": article.get("headline"),
+                "alt_headline": article.get("summary", {}).get("title"),
+                "updated": article.get("updated").strftime("%Y-%m-%d %H:%M UTC") if article.get("updated") else "N/A",
+                "link": article.get("link"),
+                "summary": article.get("summary", {}).get("summary"),
+                "importance_score": article.get("summary", {}).get("importance", 0), # Keep numeric for template logic
+                "importance": "\U0001F525" * article.get("summary", {}).get("importance", 0),
+                "keywords": article.get("summary", {}).get("keywords"),
+                "category": article.get("summary", {}).get("category"),
+                "source": article.get("source")
+            })
+
+        # Topic summary data
+        topic_summary_data = topic.get('summary', {})
+        
+        processed_topics.append({
+            '_id': topic.get('_id'),
+            'updated': topic.get('updated').strftime("%Y-%m-%d %H:%M UTC") if topic.get('updated') else "N/A",
+            'source': topic.get('source'),
+            'title': topic_summary_data.get('title', 'Topic Title Missing'),
+            'summary_text': topic_summary_data.get('summary', 'Topic summary missing.'),
+            'importance_score': topic_summary_data.get('importance', 0),
+            'importance': "\U0001F525" * topic_summary_data.get('importance', 0),
+            'keywords': topic_summary_data.get('keywords', []),
+            'category': topic_summary_data.get('category', 'N/A'),
+            'articles': formatted_articles,
+            'article_count': len(formatted_articles)
+        })
+        
+    # Attempt to get a global last update time if possible, or use current time
+    # This might need refinement based on how 'run_start_time' is stored or if a global update marker exists
+    last_update_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if processed_topics and processed_topics[0]['articles']:
+        # Try to get from the latest article of the latest topic if available
+        # This assumes articles have 'run_start_time', which they do in 'display_news'
+        # However, formatted_articles above doesn't include it. For simplicity, using topic updated time.
+        latest_topic_update_dt = dateparser.parse(processed_topics[0]['updated'])
+        if latest_topic_update_dt:
+            last_update_time_str = latest_topic_update_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    return render_template("topics.html",
+                           topics=processed_topics,
+                           location="topics", # For navigation highlighting
+                           update_time=last_update_time_str)
 
 if __name__ == "__main__":
     app.run(debug=True)
