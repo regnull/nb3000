@@ -172,10 +172,10 @@
                 <h2 class="topic-title">{{ topic.title }}</h2>
             {% endif %}
             <div class="topic-meta">
-                <span>Last Updated: {{ topic.updated }}</span> | 
-                <span>Source: {{ topic.source }}</span> | 
-                <span>Category: <a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span> |
-                <span>Importance: {{ topic.importance if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
+                <span>{{ topic.updated }}</span> | 
+                <span>{{ topic.source }}</span> | 
+                <span><a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span> |
+                <span>{{ topic.importance if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
             </div>
             
             <p class="topic-summary-text">{{ topic.summary_text }}</p>
