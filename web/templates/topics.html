@@ -140,9 +140,22 @@
             font-weight: bold;
             text-decoration: underline;
         }
+        .back-to-top {
+            display: block; /* Ensures it's on its own line if needed */
+            text-align: right; /* Aligns it to the right of the topic item */
+            font-size: 0.8em;
+            margin-top: 10px; /* Space above the link */
+        }
+        .back-to-top a {
+            text-decoration: none;
+            color: #0056b3;
+        }
+        .back-to-top a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
-<body>
+<body id="page-top">
     <div class="container">
         <div>
             <a href="/"><img src="/static/nb3000.png" width="314" height="75" alt="NewsBot 3000 Logo" style="display: block;"/></a>
@@ -174,8 +187,10 @@
                 {% if topic.source and topic.source.lower() != 'multiple' %}
                 <span>{{ topic.source }}</span> |
                 {% endif %}
-                <span><a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span> |
-                <span>{{ topic.importance if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
+                <span><a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span>
+            </div>
+            <div class="topic-importance" style="margin-top: 5px; margin-bottom: 5px;">
+                 <span>{{ topic.importance if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
             </div>
             
             <p class="topic-summary-text">{{ topic.summary_text }}</p>
@@ -209,6 +224,9 @@
                 {% endfor %}
             </div>
             {% endif %}
+            <div class="back-to-top">
+                <a href="#page-top">↑ Back to Top</a>
+            </div>
         </div>
         {% endfor %}
     {% else %}

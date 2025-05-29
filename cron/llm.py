@@ -13,8 +13,10 @@ class ArticleSummary(BaseModel):
                          'this story discusses...' or any other introduction. Never refer to 'the story' or 
                          'the article' in the summary, just describe the content.''')
     time: datetime = Field(description="The date and time of the story")
-    importance: int = Field(description='''Importance, the story importance on 1 to 10 scale, where 10 is the most important. Anything ranked 10 would represent
-        immediate life-threatening or global crisis like war, pandemics, or climate disasters. 1 is the story of no importance to anyone.''')
+    importance: int = Field(description='''Assign importance on a 1 to 10 scale, based on how the world would be affected by the news. 
+Global crises (e.g., war, pandemics, major natural disasters, significant political or economic shifts) should receive the highest importance (9-10). 
+News primarily concerning celebrities, sports, or localized non-critical events should receive lower importance (1-3). 
+Consider the breadth and depth of impact. 10 represents an immediate, life-threatening global crisis.''')
     keywords: List[str] = Field(description="The list of keywords for this story. If a company is mentioned, include the company name as a keyword.")
     category: str = Field(description="The news category of the story")
     language: str = Field(description="The language of the story")
