@@ -86,16 +86,6 @@ body {
     justify-content: left;
 }
 
-.keyword-bubble {
-    display: inline-block;
-    margin: 5px 5px 0 0;
-    padding: 5px 10px;
-    background-color: #007BFF;
-    color: white;
-    border-radius: 15px;
-    font-size: 0.9em;
-}
-
 .location {
     position: absolute;
     top: 0;
@@ -115,4 +105,162 @@ body {
 
 .share-button:hover {
     background-color: #005bb5;
+}
+
+/* Styles moved from topics.html */
+.truncate-3-lines {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.updated {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.topic-item {
+    background-color: #fff;
+    /* border: 1px solid #ddd; */ /* Border removed based on previous request */
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */ /* Box shadow removed based on previous request */
+}
+
+.topic-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.topic-meta {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.topic-summary-text {
+    font-size: 1em;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.keywords-container {
+    margin-bottom: 15px;
+}
+
+/* This .keyword-bubble is from topics.html (grey background) */
+/* It might conflict or override the existing .keyword-bubble in this file (blue background) */
+/* Consider reconciling these or using different class names if needed. */
+/* This will now be the primary .keyword-bubble style */
+.keyword-bubble {
+    display: inline-block;
+    background-color: #f0f0f0;
+    border-radius: 15px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+    color: #555;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    text-decoration: none;
+}
+
+.keyword-bubble:hover {
+    background-color: #e0e0e0;
+}
+
+.articles-header { /* This class is for a currently commented-out H3 in topics.html */
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.article-item { /* For the simplified list in topics.html */
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 15px; /* Original was 15px, then changed to 10px inline, reverting to 15px for consistency */
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+}
+
+.article-headline a { /* For the simplified list in topics.html */
+    font-size: 1.2em; 
+    font-weight: bold;
+    color: #0056b3;
+    text-decoration: none;
+}
+
+.article-headline a:hover {
+    text-decoration: underline;
+}
+
+.article-alt-headline { /* This class may not be actively used in the current topics.html structure */
+    font-size: 0.9em;
+    color: #555;
+}
+
+.article-meta { /* For the simplified list in topics.html */
+    font-size: 0.85em; /* topics.html had 0.85em inline for this */
+    color: #777;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.article-summary { /* This class may not be actively used in the current topics.html structure */
+    font-size: 0.95em;
+    color: #444;
+    margin-top: 5px;
+}
+
+.read-more-link { /* This class may not be actively used in the current topics.html structure */
+    font-size: 0.9em;
+    color: #0056b3;
+    text-decoration: none;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.read-more-link:hover {
+    text-decoration: underline;
+}
+
+.nav-links { /* For the currently commented-out nav in topics.html */
+    margin-top: 10px;
+    margin-bottom: 20px;
+    text-align: center; 
+}
+
+.nav-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    font-size: 1.1em;
+    color: #0056b3;
+}
+
+.nav-links a.nav-active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.back-to-top {
+    display: block; 
+    text-align: right; 
+    font-size: 0.8em;
+    margin-top: 10px; 
+}
+
+.back-to-top a {
+    text-decoration: none;
+    color: #0056b3;
+}
+
+.back-to-top a:hover {
+    text-decoration: underline;
 }
