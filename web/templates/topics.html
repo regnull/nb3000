@@ -157,20 +157,23 @@
             <a href="{{ url_for('display_news') }}" class="{% if location == 'main' %}nav-active{% endif %}">Home</a>
             <a href="{{ url_for('display_topics') }}" class="{% if location == 'topics' %}nav-active{% endif %}">Topics</a>
         </div> #}
-        <p class="updated">Topics updated within the last 48 hours. Last batch run: {{ update_time }} UTC</p>
+        <p class="updated">Updated: {{ update_time }} UTC</p>
 
     {% if topics %}
         {% for topic in topics %}
         <div class="topic-item">
-            {% if topic.article_count == 1 and topic.articles %}
-                <h2 class="topic-title">
+            <h2 class="topic-title">
+                {% if topic.article_count == 1 and topic.articles %}
                     <a href="{{ url_for('display_story', story_id=topic.articles[0]._id) }}" style="color: blue; text-decoration: none;" class="hover:underline">
                         {{ topic.title }}
                     </a>
-                </h2>
-            {% else %}
-                <h2 class="topic-title">{{ topic.title }}</h2>
-            {% endif %}
+                {% else %}
+                    {# Link to the new topic detail page for multi-article topics, now styled blue #}
+                    <a href="{{ url_for('display_topic_detail', topic_id=topic._id) }}" style="color: blue; text-decoration: none;" class="hover:underline">
+                        {{ topic.title }}
+                    </a>
+                {% endif %}
+            </h2>
             <div class="topic-meta">
                 <span>{{ topic.updated }}</span> |
                 {% if topic.source and topic.source.lower() != 'multiple' %}

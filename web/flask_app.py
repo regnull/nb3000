@@ -33,54 +33,6 @@ def add_header(response):
     response.cache_control.max_age = 600
     return response
 
-@app.route('/')
-def display_news():
-    sort = request.args.get('sort')
-    if not sort:
-        sort = 'time'
-    if sort != 'time' and sort != 'importance':
-        sort = 'time'
-    mongo_db = get_mongo_client()["nb3000"]
-    stories_collection = mongo_db["stories"]
-
-    # Fetch and sort stories by importance in descending order
-    horizon = datetime.now() - timedelta(days=1)
-    cursor = stories_collection.find({ "updated": {"$gt": horizon } })
-    if sort == 'time':
-        cursor = cursor.sort('updated', -1)
-    elif sort == 'importance':
-        cursor = cursor.sort([
-            ('summary.importance', -1),
-            ('updated', -1)  # Secondary sort by time descending
-        ])
-    stories = list(cursor)
-
-    last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
-
-    # Format stories for rendering
-    formatted_stories = [
-        {
-            "_id": story.get("_id"),
-            "headline": story.get("headline"),
-            "alt_headline": story.get("summary", {}).get("title"),
-            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
-            "link": story.get("link"),
-            "summary": story.get("summary", {}).get("summary"),
-            "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
-            "keywords": story.get("summary", {}).get("keywords"),
-            "category": story.get("summary", {}).get("category"),
-            "source": story.get("source"),
-            "request": request
-        }
-        for story in stories
-    ]
-
-    return render_template("news.html",
-        stories=formatted_stories,
-        sort_by=sort,
-        location="main",
-        update_time=last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
-
 @app.route('/story/<story_id>')
 def display_story(story_id):
     mongo_db = get_mongo_client()["nb3000"]
@@ -250,7 +202,7 @@ def display_keyword(keyword):
         location="keyword/" + keyword,
         update_time=last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
 
-@app.route('/topics')
+@app.route('/') # Changed from /topics to /
 def display_topics():
     mongo_db = get_mongo_client()["nb3000"]
     topics_collection = mongo_db["topics"]
@@ -327,8 +279,71 @@ def display_topics():
 
     return render_template("topics.html",
                            topics=processed_topics,
-                           location="topics", # For navigation highlighting
+                           location="main", # Changed from "topics" to "main"
                            update_time=last_update_time_str)
+
+@app.route('/topic/<topic_id>')
+def display_topic_detail(topic_id):
+    mongo_db = get_mongo_client()["nb3000"]
+    topics_collection = mongo_db["topics"]
+    stories_collection = mongo_db["stories"]
+
+    try:
+        topic = topics_collection.find_one({"_id": ObjectId(topic_id)})
+    except Exception as e:
+        # Handle cases where topic_id might not be a valid ObjectId, though ObjectId() itself can raise InvalidId
+        print(f"Error fetching topic by ID {topic_id}: {e}")
+        return "Topic not found or invalid ID", 404
+
+    if not topic:
+        return "Topic not found", 404
+
+    # Fetch associated articles for the topic
+    article_ids = topic.get('stories', [])
+    articles_in_topic = []
+    if article_ids:
+        object_id_article_ids = [ObjectId(id_val) for id_val in article_ids]
+        articles_cursor = stories_collection.find({
+            '_id': { '$in': object_id_article_ids }
+        }).sort('updated', -1) # Sort articles within topic by their update time
+        articles_in_topic = list(articles_cursor)
+
+    # Format articles for detailed display in the template
+    formatted_articles = []
+    for article in articles_in_topic:
+        formatted_articles.append({
+            "_id": article.get("_id"),
+            "headline": article.get("headline"),
+            "alt_headline": article.get("summary", {}).get("title"), # If the story was summarized, this is its title
+            "link": article.get("link"),
+            "source": article.get("source"),
+            "updated": article.get("updated").strftime("%Y-%m-%d %H:%M UTC") if article.get("updated") else "N/A",
+            "summary_text": article.get("summary", {}).get("summary"), # The article's own summary
+            "keywords": article.get("summary", {}).get("keywords"),
+            "category": article.get("summary", {}).get("category"),
+            "importance_score": article.get("summary", {}).get("importance", 0),
+            "importance_icons": "\U0001F525" * article.get("summary", {}).get("importance", 0)
+        })
+
+    # Prepare topic data for the template
+    topic_summary_data = topic.get('summary', {})
+    processed_topic = {
+        '_id': topic.get('_id'),
+        'title': topic_summary_data.get('title', 'Topic Title Missing'),
+        'summary_text': topic_summary_data.get('summary', 'Topic summary missing.'),
+        'updated': topic.get('updated').strftime("%Y-%m-%d %H:%M UTC") if topic.get('updated') else "N/A",
+        'source': topic.get('source'), # This is the topic's source, e.g., "multiple"
+        'keywords': topic_summary_data.get('keywords', []),
+        'category': topic_summary_data.get('category', 'N/A'),
+        'importance_score': topic_summary_data.get('importance', 0),
+        'importance_icons': "\U0001F525" * topic_summary_data.get('importance', 0),
+        'articles': formatted_articles,
+        'article_count': len(formatted_articles)
+    }
+
+    return render_template("topic_detail.html", 
+                           topic=processed_topic,
+                           location="topic_detail") # For potential nav highlighting or other logic
 
 if __name__ == "__main__":
     app.run(debug=True)

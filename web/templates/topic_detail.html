@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet" />
+    <title>{{ topic.title }} - Topic</title>
+    <meta property="og:title" content="{{ topic.title | truncate(100) }}" />
+    <meta property="og:type" content="article" /> {# Treat topic page like an article for sharing #}
+    <meta property="og:description" content="{{ topic.summary_text | truncate(200) }}" />
+    <meta property="og:url" content="{{ url_for('display_topic_detail', topic_id=topic._id, _external=True) }}" />
+    <meta property="og:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}" />
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@UnfuckedNews"> {# Assuming same Twitter handle #}
+    <meta name="twitter:title" content="{{ topic.title | truncate(100) }}">
+    <meta name="twitter:description" content="{{ topic.summary_text | truncate(200) }}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='nb3000.jpg', _external=True) }}">
+  
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2765634069655730"
+      crossorigin="anonymous"></script>
+    <style>
+        /* Re-include styles from topics.html that might be needed if not in main styles.css */
+        body { font-family: 'Newsreader', serif; margin:0; padding:0; background-color:#f4f4f4; color:#333; }
+        .container { width: 80%; max-width: 960px; margin: 20px auto; padding: 20px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 8px; }
+        .logo-link img { display: block; margin-bottom: 5px; }
+        .tagline { font-size: 1.1em; margin-bottom: 20px; color: #555; }
+        .topic-main-title { font-size: 2em; font-weight: bold; margin-bottom: 10px; color: #222; }
+        .topic-metadata { font-size: 0.9em; color: #666; margin-bottom: 15px; }
+        .topic-metadata span:not(:last-child):after { content: " | "; margin: 0 5px; }
+        .topic-summary { font-size: 1.1em; line-height: 1.6; margin-bottom: 20px; text-align:justify;}
+        .share-button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-bottom:20px; }
+        .share-button:hover { background-color: #0056b3; }
+        .keywords-section { margin-bottom: 20px; }
+        .keyword-bubble { display: inline-block; background-color: #e9e9e9; border-radius: 15px; padding: 5px 10px; font-size: 0.9em; color: #555; margin-right: 5px; margin-bottom: 5px; text-decoration: none; }
+        .keyword-bubble:hover { background-color: #d0d0d0; }
+        .articles-section-title { font-size: 1.5em; font-weight: bold; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .article-item-detailed { background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; padding: 15px; margin-bottom: 15px; }
+        .article-item-detailed .headline a { font-size: 1.3em; font-weight: bold; color: #0056b3; text-decoration: none; }
+        .article-item-detailed .headline a:hover { text-decoration: underline; }
+        .article-item-detailed .alt-headline { font-size: 1em; color: #444; margin-top:3px; }
+        .article-item-detailed .meta { font-size: 0.85em; color: #777; margin-top: 8px; margin-bottom: 8px; }
+        .article-item-detailed .summary { font-size: 1em; line-height: 1.5; margin-bottom: 10px; }
+        .article-item-detailed .keywords { margin-top: 10px; }
+        /* .footer { text-align: center; margin-top: 30px; padding: 20px; background-color: #333; color: #fff; font-size:0.9em; } */ /* Footer class removed */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('display_news') }}" class="logo-link"><img src="{{ url_for('static', filename='nb3000.png') }}" width="314" height="75" alt="NewsBot 3000 Logo"/></a>
+        <p class="tagline">AI-Powered News for a Clearer Perspective</p>
+
+        <h1 class="topic-main-title">{{ topic.title }}</h1>
+        <div class="topic-metadata">
+            <span>Updated: {{ topic.updated }}</span>
+            {% if topic.source and topic.source.lower() != 'multiple' %}<span>Source: {{ topic.source }}</span>{% endif %}
+            <span>Category: <a href="{{ url_for('display_category', category=topic.category.split('/')[0], subcategory=topic.category.split('/')[1:]|join('/') if '/' in topic.category else None) }}" class="keyword-bubble">{{ topic.category }}</a></span>
+            <span>Importance: {{ topic.importance_icons if topic.importance_score > 0 else 'N/A' }} ({{ topic.importance_score }}/10)</span>
+        </div>
+
+        <button class="share-button" id="shareBtnTopic">Share Topic</button>
+        
+        <p class="topic-summary">{{ topic.summary_text }}</p>
+
+        {% if topic.keywords %}
+        <div class="keywords-section">
+            <strong>Keywords:</strong>
+            {% for keyword in topic.keywords %}
+            <a href="{{ url_for('display_keyword', keyword=keyword) }}" class="keyword-bubble">{{ keyword }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if topic.articles %}
+        <h2 class="articles-section-title">Articles in this Topic ({{ topic.article_count }})</h2>
+        <div>
+            {% for article in topic.articles %}
+            <div class="article-item-detailed">
+                <h3 class="headline">
+                    <a href="{{ url_for('display_story', story_id=article._id) }}">{{ article.headline }}</a>
+                </h3>
+                {% if article.alt_headline and article.alt_headline != article.headline %}
+                    <p class="alt-headline">Original Title: <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer">{{ article.alt_headline }}</a></p>
+                {% endif %}
+                <p class="meta">
+                    <span>Source: {{ article.source }}</span> | 
+                    <span>Updated: {{ article.updated }}</span> | 
+                    <span>Category: <a href="{{ url_for('display_category', category=article.category.split('/')[0], subcategory=article.category.split('/')[1:]|join('/') if '/' in article.category else None) }}" class="keyword-bubble">{{ article.category }}</a></span> | 
+                    <span>Importance: {{ article.importance_icons if article.importance_score > 0 else 'N/A' }}</span>
+                </p>
+                <p class="summary">{{ article.summary_text }}</p>
+                {% if article.keywords %}
+                <div class="keywords">
+                    <strong>Keywords:</strong>
+                    {% for keyword in article.keywords %}
+                    <a href="{{ url_for('display_keyword', keyword=keyword) }}" class="keyword-bubble">{{ keyword }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+      const shareButtonTopic = document.getElementById("shareBtnTopic");
+      if (shareButtonTopic) {
+          shareButtonTopic.addEventListener("click", async () => {
+            if (navigator.share) {
+              try {
+                await navigator.share({
+                  title: "{{ topic.title | truncate(100) }}",
+                  text: "{{ topic.summary_text | truncate(200) }}",
+                  url: window.location.href,
+                });
+                console.log("Topic shared successfully");
+              } catch (err) {
+                console.error("Error sharing topic:", err);
+              }
+            } else {
+              alert("Web Share API is not supported in this browser. You can manually copy the URL.");
+            }
+          });
+      }
+    </script>
+    {# Assuming standard jQuery/Popper/Bootstrap are not strictly needed if not used by share or basic layout #}
+</body>
+<footer>
+    <p style="text-align: center;">Copyright &copy; {{ current_year }} Teralyt Software LLC</p>
+</footer>
+</html> 
