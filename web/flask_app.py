@@ -292,6 +292,10 @@ def display_topics():
     mongo_db = get_mongo_client()["nb3000"]
     topics_collection = mongo_db["topics"]
     stories_collection = mongo_db["stories"]
+    news_summaries_collection = mongo_db["news_summaries"] # Added news_summaries collection
+
+    # Fetch the latest daily news summary
+    latest_daily_summary = news_summaries_collection.find_one(sort=[('date', -1)])
 
     # Define the time horizon for fetching topics (last 48 hours)
     horizon = datetime.now() - timedelta(hours=48)
@@ -364,6 +368,7 @@ def display_topics():
 
     return render_template("topics.html",
                            topics=processed_topics,
+                           latest_daily_summary=latest_daily_summary, # Pass daily summary to template
                            location="main", # Changed from "topics" to "main"
                            update_time=last_update_time_str)
 

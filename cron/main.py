@@ -4,17 +4,29 @@ import pytz
 import pprint
 import requests
 import dateparser
+import html # Import html module for escaping
+import json # Added json for stringifying chunks for the new LLM step
 
 from bs4 import BeautifulSoup
 from pymongo.mongo_client import MongoClient
 from pymongo.collection import Collection
 from bson import ObjectId
-from datetime import datetime
-from llm import summarize_article, get_text_embeddings, summarize_stories
+from datetime import datetime, timedelta
+from llm import (
+    summarize_article, 
+    get_text_embeddings, 
+    summarize_stories, 
+    generate_initial_daily_summary, # New import
+    generate_topic_short_name,          # New import
+    structure_plain_text_into_paragraphs, # Updated import
+    segment_paragraph_for_short_name_linking, # New import, replaces old segment function
+    DailyNewsSummary # To construct the final object for DB
+)
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
 from npr import NPR
 from apnews import AssociatedPress
+from daily_summary_generator import create_and_save_daily_summary # New import
 
 def merge_stories(stories: list[dict], story: dict):
     for s in stories:
@@ -153,6 +165,9 @@ if __name__ == "__main__":
     client = MongoClient(mongo_uri)
     db = client.get_database('nb3000')
     stories_col = db.get_collection('stories')
+    topics_col = db.get_collection("topics") # Ensure topics_col is defined here
+    keywords_col = db["keywords"] # Ensure keywords_col is defined here (though not directly used by daily summary fn)
+    news_summaries_col = db.get_collection('news_summaries') # Define news_summaries_col
 
     print("Fetching and analyzing stories...")
     processed_articles = []
@@ -271,13 +286,23 @@ if __name__ == "__main__":
         print(f"CATEGORY: {article['summary'].get('category', 'N/A')}")
         print(f"KEYWORDS: {', '.join(article['summary'].get('keywords', []))}")
         
+    # Call the refactored daily news summary generation function
+    if processed_articles: # Only run if there were new articles processed in this run
+        create_and_save_daily_summary(db, stories_col, topics_col, news_summaries_col)
+    else:
+        print("Skipping daily summary generation as no new articles were processed in this run.")
 
-def process_keyword(keyword: str):
-    print(f'processing keyword: {keyword}')
-    k = keywords_col.find_one({"keyword": keyword})
-    if k is not None:
-        print(f"Keyword {keyword} already exists")
-        return
-    embedding = get_text_embeddings(keyword)
-    keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
+    # The process_keyword function might need db and keywords_col passed if it were part of a class
+    # For now, as a standalone, it relies on global `db` and `keywords_col` if they were defined globally before main.
+    # If not, they need to be passed or made accessible.
+    # Assuming it's fine for now or will be refactored separately if needed.
+
+# def process_keyword(keyword: str): # Definition remains, ensure its dependencies are met.
+#     print(f'processing keyword: {keyword}')
+#     k = keywords_col.find_one({"keyword": keyword})
+#     if k is not None:
+#         print(f"Keyword {keyword} already exists")
+#         return
+#     embedding = get_text_embeddings(keyword)
+#     keywords_col.insert_one({"keyword": keyword, "embedding": embedding})
 

@@ -1,11 +1,12 @@
 import pytz
-from typing import List, Any
+from typing import List, Any, Union, Dict
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
+import json # For formatting input to LLMs if needed
 
 class ArticleSummary(BaseModel):
     title: str = Field(description="Article's title based on the content, unbiased, without spin or clickbait")
@@ -109,4 +110,203 @@ You are an expert journalist capable of analyzing news stories in depth.
     print("\nSummarized stories:")
     print(parsed_data)
     
+    return parsed_data
+
+# --- Pydantic Models for Daily Summary Workflow (Revised with Short Names) ---
+
+class InitialDailySummaryOutput(BaseModel):
+    date: datetime = Field(description="The date for which this news summary is generated.")
+    title: str = Field(description="A concise, engaging title for the day's news summary.")
+    plain_text_summary: str = Field(description="A comprehensive one-page PLAIN TEXT summary of the most significant news from the past 24 hours. No HTML links.")
+    top_keywords: List[str] = Field(description="A list of 5-7 most prominent keywords or key phrases.")
+    key_story_titles: List[str] = Field(description="Headlines of 3-5 key stories mentioned.")
+    sentiment: str = Field(description="Overall sentiment (e.g., Positive, Negative, Neutral, Mixed).")
+
+class TopicShortNameOutput(BaseModel):
+    short_name: str = Field(description="A very concise (2-5 words) and unique key phrase or short name for the topic, suitable for an LLM to recognize later when scanning text.")
+
+class PlainParagraphsOutput(BaseModel):
+    paragraphs: List[str] = Field(description="A list of strings, where each string is a logically separated paragraph of plain text.")
+
+class TextChunk(BaseModel):
+    type: str = Field(default="text")
+    content: str
+
+class PotentialLinkChunk(BaseModel):
+    type: str = Field(default="potential_link")
+    identified_short_name: str = Field(description="The short_name of the topic identified in this text segment.")
+    link_text: str = Field(description="The actual segment of text from the paragraph that corresponds to this topic and should become the link text.")
+
+class SegmentedParagraphWithShortNamesOutput(BaseModel):
+    chunks: List[Union[TextChunk, PotentialLinkChunk]] = Field(description="A list of text and link chunks for a single paragraph.")
+
+class LinkableTopicInfo(BaseModel):
+    topic_id: str
+    title: str
+    summary: str 
+
+# Final structure for MongoDB
+class DailyNewsSummary(BaseModel):
+    date: datetime 
+    title: str 
+    overall_summary: str # This will contain the final HTML with <p> tags and <a> tags
+    top_keywords: List[str] 
+    key_story_titles: List[str] 
+    sentiment: str 
+
+# --- LLM Functions for Daily Summary Workflow (Revised with Short Names) ---
+
+def generate_initial_daily_summary(articles_data: List[dict], llm_model: str = "gpt-4o-mini") -> dict:
+    llm = ChatOpenAI(model=llm_model, temperature=0.7, max_tokens=2000)
+    sys_prompt = '''
+    You are an expert news editor. Your task is to create a comprehensive yet concise one-page PLAIN TEXT summary 
+    of the day's most important news based on the provided articles. 
+    The summary should be well-organized, easy to read, and cover a diverse range of significant events. 
+    Focus on clarity, accuracy, and an objective tone. 
+    ABSOLUTELY DO NOT include any HTML formatting or hyperlinks in the 'plain_text_summary' field.
+    The output MUST be a valid JSON object.
+    '''
+    user_prompt = '''
+    Based on the following collection of news articles (each with a headline and summary) from the past 24 hours, 
+    please generate a daily news briefing. Respond with a JSON object that strictly adheres to the following format instructions.
+    The 'plain_text_summary' field should contain only plain text, be approximately 500-700 words, and have no HTML.
+    Ensure the 'date' field in your JSON output reflects today's date.
+
+    {format_instructions}
+
+    Article Data:
+    {articles_input_str}
+    '''
+
+    articles_input_parts = []
+    for i, article in enumerate(articles_data):
+        part = f"--- ARTICLE {i+1} ---\n"
+        part += f"HEADLINE: {article.get('headline', 'N/A')}\n"
+        part += f"SUMMARY: {article.get('summary_text', 'N/A')}\n\n"
+        articles_input_parts.append(part)
+    articles_input_str = "".join(articles_input_parts)
+
+    parser = PydanticOutputParser(pydantic_object=InitialDailySummaryOutput)
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+
+    res = llm.invoke(prompt_template.format_messages(articles_input_str=articles_input_str, format_instructions=parser.get_format_instructions()))
+    parsed_data = parser.parse(res.content).model_dump()
+    # Override date to be sure, as LLMs can sometimes pick a date from the articles
+    parsed_data['date'] = datetime.now(pytz.utc)
+    return parsed_data
+
+def structure_plain_text_into_paragraphs(plain_text_summary: str, llm_model: str = "gpt-4o-mini") -> dict:
+    llm = ChatOpenAI(model=llm_model, temperature=0.3, max_tokens=2500) # Max tokens might need adjustment
+    sys_prompt = '''
+    You are an expert content structurer. Your task is to take a single block of plain text (a news summary) 
+    and break it down into a list of strings, where each string represents a logically separated paragraph. 
+    The goal is to improve readability. Paragraphs should not be too short unless it is a single, impactful statement. 
+    Aim for thoughtful paragraph breaks that group related ideas. Preserve the original wording and casing.
+    The output MUST be a valid JSON object that strictly follows the Pydantic model for PlainParagraphsOutput (a list of strings under a "paragraphs" key).
+    '''
+    user_prompt = '''
+    Please process the 'PLAIN TEXT NEWS SUMMARY' provided below. 
+    Segment it into a list of strings, where each string is a paragraph.
+    Respond with a JSON object adhering to the Pydantic format instructions for 'PlainParagraphsOutput'.
+
+    {format_instructions}
+
+    PLAIN TEXT NEWS SUMMARY:
+    {plain_text_summary}
+    '''
+    parser = PydanticOutputParser(pydantic_object=PlainParagraphsOutput)
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+    res = llm.invoke(prompt_template.format_messages(
+        plain_text_summary=plain_text_summary,
+        format_instructions=parser.get_format_instructions()
+    ))
+    parsed_data = parser.parse(res.content).model_dump()
+    return parsed_data
+
+def segment_paragraph_for_short_name_linking(paragraph_text: str, enriched_linkable_topics: List[Dict[str, str]], llm_model: str = "gpt-4o-mini") -> dict:
+    llm = ChatOpenAI(model=llm_model, temperature=0.2, max_tokens=1500)
+    sys_prompt = '''
+    You are an expert text processing system. Your task is to analyze a single paragraph of a news summary and a list of known topics (each with a 'topic_id', 'title', 'summary', and unique 'short_name').
+    Segment the paragraph into an ordered sequence of chunks: 'text' chunks or 'potential_link' chunks.
+    - If a segment of the paragraph clearly and directly corresponds to one of the topics provided in 'ENRICHED LINKABLE TOPICS DATA' (match based on the topic's 'short_name', using its 'title' and 'summary' for context and confirmation), 
+      mark it as a 'potential_link' chunk. This chunk must include the 'identified_short_name' of the matched topic and the 'link_text' (the actual text segment from the paragraph that refers to this topic).
+      Only identify a topic if the match to its 'short_name' and context is strong. Do not force matches.
+    - All other segments are 'text' chunks; provide their 'content'.
+    The output MUST be a valid JSON object strictly following the Pydantic model for SegmentedParagraphWithShortNamesOutput.
+    Preserve original casing, spacing, and ALL PUNCTUATION (including sentence-ending periods) from the input paragraph across the generated chunks.
+    If a sentence ends with text that becomes 'link_text', that 'link_text' MUST include the original sentence-ending punctuation.
+    '''
+    user_prompt = '''
+    Process the 'PARAGRAPH TEXT' below. Segment it into 'text' and 'potential_link' chunks based on the 'ENRICHED LINKABLE TOPICS DATA'.
+    For 'potential_link' chunks, provide the 'identified_short_name' and 'link_text'. For 'text' chunks, provide 'content'.
+    Ensure original punctuation is preserved in chunk text. Respond with JSON as per format instructions.
+
+    {format_instructions}
+
+    ENRICHED LINKABLE TOPICS DATA (each has topic_id, title, summary, short_name):
+    {linkable_topics_str}
+
+    PARAGRAPH TEXT:
+    {paragraph_text}
+    '''
+    
+    linkable_topics_parts = []
+    if enriched_linkable_topics:
+        for i, topic_info in enumerate(enriched_linkable_topics):
+            part = f"--- TOPIC ENTRY {i+1} ---\n"
+            part += f"SHORT_NAME: {topic_info.get('short_name')}\n"
+            part += f"TOPIC_ID (for your reference, do not output): {topic_info.get('topic_id')}\n"
+            part += f"TITLE (context): {topic_info.get('title')}\n"
+            part += f"SUMMARY (context): {topic_info.get('summary')}\n\n"
+            linkable_topics_parts.append(part)
+    linkable_topics_str = "".join(linkable_topics_parts) if linkable_topics_parts else "No specific topics provided for linking."
+
+    parser = PydanticOutputParser(pydantic_object=SegmentedParagraphWithShortNamesOutput)
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+    res = llm.invoke(prompt_template.format_messages(
+        paragraph_text=paragraph_text,
+        linkable_topics_str=linkable_topics_str,
+        format_instructions=parser.get_format_instructions()
+    ))
+    parsed_data = parser.parse(res.content).model_dump()
+    return parsed_data
+
+# NEW LLM Function (LLM 2a) to generate a short name for a topic
+def generate_topic_short_name(topic_title: str, topic_summary: str, llm_model: str = "gpt-4o-mini") -> dict:
+    llm = ChatOpenAI(model=llm_model, temperature=0.3, max_tokens=50)
+    sys_prompt = '''
+    You are a concise content analyst. Given a topic title and summary, generate a very short (2-5 words), 
+    unique, and descriptive key phrase or "short name" for this topic. This short name will be used by another AI 
+    to identify mentions of this topic in a broader text. It should be distinctive.
+    Example: For title "Global Economic Summit Addresses Inflation Concerns" and a relevant summary, a good short name might be "Global Inflation Summit".
+    Another Example: Title "New Discoveries on Mars Rover Mission", short name: "Mars Rover Discoveries".
+    The output MUST be a valid JSON object strictly following the Pydantic model for TopicShortNameOutput.
+    '''
+    user_prompt = '''
+    Generate a unique and descriptive short name (2-5 words) for the following topic:
+    TITLE: {topic_title}
+    SUMMARY: {topic_summary}
+
+    {format_instructions}
+    '''
+    parser = PydanticOutputParser(pydantic_object=TopicShortNameOutput)
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+    res = llm.invoke(prompt_template.format_messages(
+        topic_title=topic_title,
+        topic_summary=topic_summary,
+        format_instructions=parser.get_format_instructions()
+    ))
+    parsed_data = parser.parse(res.content).model_dump()
     return parsed_data

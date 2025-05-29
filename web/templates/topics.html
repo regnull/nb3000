@@ -33,6 +33,34 @@
         </div> #}
         <p class="updated">Updated: {{ update_time }} UTC</p>
 
+    {% if latest_daily_summary %}
+    <div class="daily-summary-section" style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e0f0ff;">
+        <h2 style="font-size: 1.6em; font-weight: bold; color: #2a3b4d; margin-top: 0; margin-bottom: 8px;">{{ latest_daily_summary.title }}</h2>
+        <p style="font-size: 0.8em; color: #555; margin-bottom: 15px;">Daily Briefing for {{ latest_daily_summary.date.strftime('%Y-%m-%d') }} | Sentiment: {{ latest_daily_summary.sentiment }}</p>
+        <div style="font-size: 1em; line-height: 1.6; margin-bottom: 15px; text-align: justify;">
+            {{ latest_daily_summary.overall_summary | safe }} {# Assuming summary can contain HTML or newlines #}
+        </div>
+        {% if latest_daily_summary.top_keywords %}
+        <div style="margin-bottom: 10px;">
+            <strong style="font-size: 0.9em;">Top Keywords:</strong>
+            {% for keyword in latest_daily_summary.top_keywords %}
+            <span class="keyword-bubble" style="background-color: #e0eaf0; color: #333; font-size: 0.85em;">{{ keyword }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {# {% if latest_daily_summary.key_story_titles %} #} {# Section commented out #}
+        {# <div> #}
+            {# <strong style="font-size: 0.9em;">Key Stories Mentioned:</strong> #}
+            {# <ul style="list-style: disc; margin-left: 20px; font-size: 0.9em;"> #}
+                {# {% for story_title in latest_daily_summary.key_story_titles %} #}
+                {# <li>{{ story_title }}</li> #}
+                {# {% endfor %} #}
+            {# </ul> #}
+        {# </div> #}
+        {# {% endif %} #}
+    </div>
+    {% endif %}
+
     {% if topics %}
         {% for topic in topics %}
         <div class="topic-item">
