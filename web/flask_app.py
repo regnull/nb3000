@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, g, send_from_directory
+from flask import Flask, render_template, request, g, send_from_directory, abort
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime, timedelta
@@ -27,6 +27,12 @@ def get_mongo_client():
             raise ValueError("MONGO_URI environment variable must be set")
         g.mongo_client = MongoClient(uri)
     return g.mongo_client
+
+@app.before_request
+def block_semrush_bot():
+    user_agent = request.headers.get('User-Agent')
+    if user_agent and 'SemrushBot' in user_agent:
+        abort(403)  # Forbidden
 
 @app.after_request
 def add_header(response):
