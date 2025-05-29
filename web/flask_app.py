@@ -162,30 +162,37 @@ def display_category(category, subcategory):
             ('summary.importance', -1),
             ('updated', -1)  # Secondary sort by time descending
         ])
+    cursor = cursor.allow_disk_use(True)
     stories = list(cursor)
-    last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
-    formatted_stories = [
-        {
-            "_id": story.get("_id"),
-            "headline": story.get("headline"),
-            "alt_headline": story.get("summary", {}).get("title"),
-            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
-            "link": story.get("link"),
-            "summary": story.get("summary", {}).get("summary"),
-            "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
-            "keywords": story.get("summary", {}).get("keywords"),
-            "category": story.get("summary", {}).get("category"),
-            "source": story.get("source"),
-            "request": request
-        }
-        for story in stories
-    ]
+
+    if not stories:
+        last_update_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted_stories = []
+    else:
+        last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
+        last_update_time_str = last_update_time.strftime("%Y-%m-%d %H:%M:%S")
+        formatted_stories = [
+            {
+                "_id": story.get("_id"),
+                "headline": story.get("headline"),
+                "alt_headline": story.get("summary", {}).get("title"),
+                "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
+                "link": story.get("link"),
+                "summary": story.get("summary", {}).get("summary"),
+                "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
+                "keywords": story.get("summary", {}).get("keywords"),
+                "category": story.get("summary", {}).get("category"),
+                "source": story.get("source"),
+                "request": request
+            }
+            for story in stories
+        ]
 
     return render_template("news.html",
         stories=formatted_stories,
         sort_by=sort,
         location="category/" + cat,
-        update_time=last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
+        update_time=last_update_time_str)
 
 @app.route('/keyword/<keyword>')
 def display_keyword(keyword):
@@ -236,30 +243,37 @@ def display_keyword(keyword):
             ('summary.importance', -1),
             ('updated', -1)  # Secondary sort by time descending
         ])
+    cursor = cursor.allow_disk_use(True)
     stories = list(cursor)
-    last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
-    formatted_stories = [
-        {
-            "_id": story.get("_id"),
-            "headline": story.get("headline"),
-            "alt_headline": story.get("summary", {}).get("title"),
-            "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
-            "link": story.get("link"),
-            "summary": story.get("summary", {}).get("summary"),
-            "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
-            "keywords": story.get("summary", {}).get("keywords"),
-            "category": story.get("summary", {}).get("category"),
-            "source": story.get("source"),
-            "request": request
-        }
-        for story in stories
-    ]
+
+    if not stories:
+        last_update_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted_stories = []
+    else:
+        last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
+        last_update_time_str = last_update_time.strftime("%Y-%m-%d %H:%M:%S")
+        formatted_stories = [
+            {
+                "_id": story.get("_id"),
+                "headline": story.get("headline"),
+                "alt_headline": story.get("summary", {}).get("title"),
+                "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
+                "link": story.get("link"),
+                "summary": story.get("summary", {}).get("summary"),
+                "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
+                "keywords": story.get("summary", {}).get("keywords"),
+                "category": story.get("summary", {}).get("category"),
+                "source": story.get("source"),
+                "request": request
+            }
+            for story in stories
+        ]
 
     return render_template("news.html",
         stories=formatted_stories,
         sort_by=sort,
         location="keyword/" + keyword,
-        update_time=last_update_time.strftime("%Y-%m-%d %H:%M:%S"))
+        update_time=last_update_time_str)
 
 @app.route('/') # Changed from /topics to /
 def display_topics():
