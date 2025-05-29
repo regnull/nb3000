@@ -205,6 +205,18 @@ def display_keyword(keyword):
     keywords_col = mongo_db["keywords"]
     stories_col = mongo_db['stories']
     k = keywords_col.find_one({"keyword": keyword})
+    
+    # Check if the keyword was found
+    if k is None:
+        # Keyword not found, return empty results or a specific message
+        # For now, let's return an empty list of stories and a current time update
+        return render_template("news.html",
+                               stories=[],
+                               sort_by=sort,
+                               location="keyword/" + keyword,
+                               update_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                               error_message=f"Keyword '{keyword}' not found.")
+    
     emb = k["embedding"]
 
     pipeline = [
