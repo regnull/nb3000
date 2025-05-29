@@ -33,6 +33,59 @@ def add_header(response):
     response.cache_control.max_age = 600
     return response
 
+@app.route('/stories')
+def display_news():
+    sort = request.args.get('sort')
+    if not sort:
+        sort = 'time'
+    if sort != 'time' and sort != 'importance':
+        sort = 'time'
+    mongo_db = get_mongo_client()["nb3000"]
+    stories_collection = mongo_db["stories"]
+
+    # Fetch and sort stories by importance in descending order
+    horizon = datetime.now() - timedelta(days=1)
+    cursor = stories_collection.find({ "updated": {"$gt": horizon } })
+    if sort == 'time':
+        cursor = cursor.sort('updated', -1)
+    elif sort == 'importance':
+        cursor = cursor.sort([
+            ('summary.importance', -1),
+            ('updated', -1)  # Secondary sort by time descending
+        ])
+    stories = list(cursor)
+
+    # Handle case where there might be no stories after filtering
+    if not stories:
+        last_update_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted_stories = []
+    else:
+        last_update_time = max(stories, key=lambda story: story['run_start_time'])['run_start_time']
+        last_update_time_str = last_update_time.strftime("%Y-%m-%d %H:%M:%S")
+        # Format stories for rendering
+        formatted_stories = [
+            {
+                "_id": story.get("_id"),
+                "headline": story.get("headline"),
+                "alt_headline": story.get("summary", {}).get("title"),
+                "updated": story.get("updated").strftime("%Y-%m-%d %H:%M UTC"),
+                "link": story.get("link"),
+                "summary": story.get("summary", {}).get("summary"),
+                "importance": "\U0001F525" * story.get("summary", {}).get("importance", 0),
+                "keywords": story.get("summary", {}).get("keywords"),
+                "category": story.get("summary", {}).get("category"),
+                "source": story.get("source"),
+                "request": request
+            }
+            for story in stories
+        ]
+
+    return render_template("news.html",
+        stories=formatted_stories,
+        sort_by=sort,
+        location="stories",
+        update_time=last_update_time_str)
+
 @app.route('/story/<story_id>')
 def display_story(story_id):
     mongo_db = get_mongo_client()["nb3000"]
