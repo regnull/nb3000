@@ -7,6 +7,13 @@ import dateparser
 
 app = Flask(__name__)
 
+bots = [
+    'SemrushBot',
+    'AhrefsBot',
+    'Bingbot',
+    'YandexBot',
+]
+
 @app.context_processor
 def inject_current_year():
     return {'current_year': datetime.utcnow().year}
@@ -29,9 +36,9 @@ def get_mongo_client():
     return g.mongo_client
 
 @app.before_request
-def block_semrush_bot():
+def block_bots():
     user_agent = request.headers.get('User-Agent')
-    if user_agent and 'SemrushBot' in user_agent:
+    if user_agent and any(bot in user_agent for bot in bots):
         abort(403)  # Forbidden
 
 @app.after_request

@@ -310,3 +310,174 @@ def generate_topic_short_name(topic_title: str, topic_summary: str, llm_model: s
     ))
     parsed_data = parser.parse(res.content).model_dump()
     return parsed_data
+
+# --- Pydantic Models for Simplified Daily Summary Workflow ---
+
+class SimplifiedDailySummaryOutput(BaseModel):
+    date: datetime = Field(description="The date for which this news summary is generated.")
+    title: str = Field(description="A concise, engaging title for the day's news summary.")
+    paragraphed_summary: str = Field(description="A comprehensive summary of the most significant news from the past 24 hours, already formatted with paragraph breaks using \\n\\n between paragraphs. No HTML formatting.")
+    top_keywords: List[str] = Field(description="A list of 5-7 most prominent keywords or key phrases.")
+    key_story_titles: List[str] = Field(description="Headlines of 3-5 key stories mentioned.")
+    sentiment: str = Field(description="Overall sentiment (e.g., Positive, Negative, Neutral, Mixed).")
+
+class LinkedSummaryOutput(BaseModel):
+    summary_with_link_markers: str = Field(description="The summary text with link markers inserted. Use ==>link_start <short_name_here><== to start a link and ==>link_end<== to end it.")
+
+# --- Simplified LLM Functions for Daily Summary Workflow ---
+
+def generate_simple_daily_summary(articles_data: List[dict], llm_model: str = "gpt-4o-mini") -> dict:
+    """Generate a daily summary that's already formatted with paragraphs using \\n\\n separators"""
+    llm = ChatOpenAI(model=llm_model, temperature=0.7, max_tokens=2000)
+    sys_prompt = '''
+    You are an expert news editor. Your task is to create a comprehensive yet concise daily news summary 
+    based on the provided articles. The summary should be well-organized into logical paragraphs, 
+    separated by double newlines (\\n\\n). Focus on clarity, accuracy, and an objective tone.
+    DO NOT include any HTML formatting or hyperlinks. Use only plain text with paragraph breaks.
+    The output MUST be a valid JSON object.
+    '''
+    user_prompt = '''
+    Based on the following collection of news articles from the past 24 hours, 
+    please generate a daily news briefing. The 'paragraphed_summary' should be 500-700 words, 
+    organized into logical paragraphs separated by \\n\\n.
+
+    {format_instructions}
+
+    Article Data:
+    {articles_input_str}
+    '''
+
+    articles_input_parts = []
+    for i, article in enumerate(articles_data):
+        part = f"--- ARTICLE {i+1} ---\n"
+        part += f"HEADLINE: {article.get('headline', 'N/A')}\n"
+        part += f"SUMMARY: {article.get('summary_text', 'N/A')}\n\n"
+        articles_input_parts.append(part)
+    articles_input_str = "".join(articles_input_parts)
+
+    parser = PydanticOutputParser(pydantic_object=SimplifiedDailySummaryOutput)
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+
+    res = llm.invoke(prompt_template.format_messages(articles_input_str=articles_input_str, format_instructions=parser.get_format_instructions()))
+    parsed_data = parser.parse(res.content).model_dump()
+    # Override date to be sure
+    parsed_data['date'] = datetime.now(pytz.utc)
+    return parsed_data
+
+def insert_link_markers(summary_text: str, topics_with_short_names: List[Dict[str, str]], llm_model: str = "gpt-4o-mini") -> dict:
+    """Insert link markers in the summary text where topics should be linked"""
+    llm = ChatOpenAI(model=llm_model, temperature=0.2, max_tokens=2500)
+    sys_prompt = '''
+    You are an expert text processor. Your task is to analyze a news summary and insert link markers 
+    where the text refers to specific topics from the provided list.
+    
+    When you identify text that clearly refers to one of the provided topics, wrap the relevant text with:
+    ==>link_start <short_name><== at the beginning 
+    ==>link_end<== at the end
+    
+    Where <short_name> is the exact short_name from the topic list.
+    
+    Identify the short fragments of text where the link should be inserted. Most of the
+    sentences in the original text must get links.
+    Every link_start marker must have a corresponding link_end marker.
+    There must be some text between the link_start and link_end markers.
+    Preserve all original text, spacing, and punctuation exactly.
+    
+    Examples:
+    Given the text: In Nigeria, a devastating flooding event in Mokwa, Niger State, has 
+    led to the deaths of at least 111 people, with ongoing rescue operations 
+    uncovering more victims. Torrential rains and a dam collapse have exacerbated the 
+    situation, displacing many residents and prompting calls for improved infrastructure 
+    to prevent future disasters. This incident underscores the recurring challenges of seasonal 
+    flooding affecting communities along critical waterways in the country.
+    And the topic:
+    Short Name: Nigeria Flood Disaster
+    Title: More than 100 people killed after floods submerge market town in Nigeria
+    Summary: At least 111 people have been confirmed dead in Mokwa, Niger State, Nigeria, 
+    due to severe flooding caused by torrential rains and a dam collapse. The flooding has 
+    displaced many residents, and ongoing rescue operations are uncovering more bodies. 
+    This disaster underscores the recurring challenges of seasonal flooding in 
+    Nigeria, particularly affecting communities along the Niger and Benue Rivers, 
+    prompting local officials to call for improved infrastructure to mitigate future occurrences.
+    You would insert the link marker here:
+    At least 111 people have been ==>link_start Nigeria Flood Disaster<== confirmed dead in 
+    Mokwa, Niger State, Nigeria ==>link_end<==, 
+    due to severe flooding caused by torrential rains and a dam collapse. The flooding has 
+    displaced many residents, and ongoing rescue operations are uncovering more bodies. 
+    This disaster underscores the recurring challenges of seasonal flooding in Nigeria, 
+    particularly affecting communities along the Niger and Benue Rivers, prompting local 
+    officials to call for improved infrastructure to mitigate future occurrences.
+    
+    Given the text:
+    In political news, President Trump is visiting Pittsburgh to celebrate Japan's acquisition 
+    of US Steel, a deal he previously denounced as a 'disaster.' While Trump promotes the 
+    acquisition as a partnership beneficial for American jobs, there is significant bipartisan 
+    backlash, particularly from the United Steelworkers union, who argue it undermines national 
+    security and American steelworkers. The complexities surrounding this deal highlight the 
+    contentious nature of foreign investment in American industry.
+    And the topic:
+    Short Name: Trump Japan Steel Deal
+    Title: Trump Celebrates Japan's Acquisition of US Steel amid Bipartisan Backlash
+    Summary: President Donald Trump is visiting Pittsburgh to celebrate the acquisition of U.S. 
+    Steel by Japan's Nippon Steel, a deal he initially opposed but now endorses as a beneficial 
+    partnership for American jobs and investment. The acquisition, which has sparked bipartisan 
+    criticism, particularly from President Joe Biden who blocked it on national security grounds, 
+    raises concerns among labor unions about the impact on American steelworkers. Despite promises 
+    of job creation and investment, the specifics of the deal remain unclear, leading to 
+    skepticism regarding its implications for the U.S. manufacturing sector.
+    You would insert the link marker here:
+    President Donald Trump is visiting Pittsburgh to ==>link_start Trump Japan Steel Deal<== celebrate 
+    the acquisition of U.S. Steel by Japan's Nippon Steel==>link_end<==, a deal he initially opposed but now 
+    endorses as a beneficial partnership for American jobs and investment. The acquisition, 
+    which has sparked bipartisan criticism, particularly from President Joe Biden who blocked 
+    it on national security grounds, raises concerns among labor unions about the impact on 
+    American steelworkers. Despite promises of job creation and investment, the specifics 
+    of the deal remain unclear, leading to skepticism regarding its implications for the U.S. 
+    manufacturing sector.
+    '''
+    
+    user_prompt = '''
+    Insert link markers in the following summary text. Use the format:
+    ==>link_start <short_name><== (link text here) ==>link_end<==
+    
+    Only link text that clearly refers to one of these topics:
+    
+    {topics_list}
+    
+    Summary to process:
+    {summary_text}
+    
+    {format_instructions}
+    '''
+    
+    topics_list_parts = []
+    for i, topic in enumerate(topics_with_short_names):
+        part = f"Topic {i+1}:\n"
+        part += f"  Short Name: {topic.get('short_name')}\n"
+        part += f"  Title: {topic.get('title')}\n"
+        part += f"  Summary: {topic.get('summary')}\n\n"
+        topics_list_parts.append(part)
+    topics_list = "".join(topics_list_parts) if topics_list_parts else "No topics available for linking."
+    
+    print("\n\n--------------------------------")
+    print(summary_text)
+    print("\n\n--------------------------------")
+    print(topics_list)
+    print("\n\n--------------------------------")
+
+    parser = PydanticOutputParser(pydantic_object=LinkedSummaryOutput)
+    prompt_template = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(sys_prompt),
+        HumanMessagePromptTemplate.from_template(user_prompt)
+    ])
+
+    res = llm.invoke(prompt_template.format_messages(
+        summary_text=summary_text,
+        topics_list=topics_list,
+        format_instructions=parser.get_format_instructions()
+    ))
+    parsed_data = parser.parse(res.content).model_dump()
+    return parsed_data

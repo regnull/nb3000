@@ -16,11 +16,9 @@ from llm import (
     summarize_article, 
     get_text_embeddings, 
     summarize_stories, 
-    generate_initial_daily_summary, # New import
-    generate_topic_short_name,          # New import
-    structure_plain_text_into_paragraphs, # Updated import
-    segment_paragraph_for_short_name_linking, # New import, replaces old segment function
-    DailyNewsSummary # To construct the final object for DB
+    generate_simple_daily_summary, # Updated import for simplified approach
+    generate_topic_short_name,          
+    DailyNewsSummary # For constructing the final object for DB
 )
 from dotenv import load_dotenv
 from csm import ChristianScienceMonitor
@@ -168,7 +166,7 @@ if __name__ == "__main__":
     topics_col = db.get_collection("topics") # Ensure topics_col is defined here
     keywords_col = db["keywords"] # Ensure keywords_col is defined here (though not directly used by daily summary fn)
     news_summaries_col = db.get_collection('news_summaries') # Define news_summaries_col
-
+    
     print("Fetching and analyzing stories...")
     processed_articles = []
     for article in articles:
