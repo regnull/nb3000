@@ -51,14 +51,18 @@ def block_bots():
             print(f"DEBUG: Blocking bot: {bot} found in {user_agent}")
             abort(403)  # Forbidden
     
-    # Check IP blocking
-    client_ip = request.remote_addr
-    print(f"DEBUG: Checking IP: {client_ip}")
-    if ip_blocker.is_blocked(client_ip):
-        print(f"DEBUG: Blocking IP: {client_ip}")
-        abort(403)  # Forbidden
+    # Check all IPs in X-Forwarded-For, or remote_addr if not present
+    forwarded_for = request.headers.get('X-Forwarded-For')
+    if forwarded_for:
+        ip_list = [ip.strip() for ip in forwarded_for.split(',')]
     else:
-        print(f"DEBUG: IP {client_ip} is not blocked")
+        ip_list = [request.remote_addr]
+    for ip in ip_list:
+        print(f"DEBUG: Checking IP: {ip}")
+        if ip_blocker.is_blocked(ip):
+            print(f"DEBUG: Blocking IP: {ip}")
+            abort(403)  # Forbidden
+    print(f"DEBUG: None of the IPs {ip_list} are blocked")
 
 @app.after_request
 def add_header(response):
