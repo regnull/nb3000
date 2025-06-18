@@ -10,6 +10,7 @@ class IPBlocker:
         """Initialize Alibaba Cloud IP ranges"""
         alibaba_ranges = [
             # Alibaba Cloud Mainland China
+            "47.82.0.0/15",
             "47.88.0.0/14",
             "47.89.0.0/16",
             "47.90.0.0/15",
