@@ -43,15 +43,22 @@ def get_mongo_client():
 def block_bots():
     # Get user agent and convert to lowercase for case-insensitive matching
     user_agent = request.headers.get('User-Agent', '').lower()
+    print(f"DEBUG: Received request with User-Agent: {user_agent}")
     
     # Check if user agent contains any known bot identifiers
-    if any(bot in user_agent for bot in bots):
-        abort(403)  # Forbidden
-        
-    # Check if IP is from Alibaba Cloud
+    for bot in bots:
+        if bot.lower() in user_agent:
+            print(f"DEBUG: Blocking bot: {bot} found in {user_agent}")
+            abort(403)  # Forbidden
+    
+    # Check IP blocking
     client_ip = request.remote_addr
+    print(f"DEBUG: Checking IP: {client_ip}")
     if ip_blocker.is_blocked(client_ip):
+        print(f"DEBUG: Blocking IP: {client_ip}")
         abort(403)  # Forbidden
+    else:
+        print(f"DEBUG: IP {client_ip} is not blocked")
 
 @app.after_request
 def add_header(response):
@@ -454,5 +461,5 @@ def display_topic_detail(topic_id):
                            topic=processed_topic,
                            location="topic_detail") # For potential nav highlighting or other logic
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001, debug=True)
