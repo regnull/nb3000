@@ -4,8 +4,12 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 import os
 import dateparser
+from ip_blocker import IPBlocker
 
 app = Flask(__name__)
+
+# Initialize IP blocker
+ip_blocker = IPBlocker()
 
 bots = [
     'SemrushBot',
@@ -37,8 +41,16 @@ def get_mongo_client():
 
 @app.before_request
 def block_bots():
-    user_agent = request.headers.get('User-Agent')
-    if user_agent and any(bot in user_agent for bot in bots):
+    # Get user agent and convert to lowercase for case-insensitive matching
+    user_agent = request.headers.get('User-Agent', '').lower()
+    
+    # Check if user agent contains any known bot identifiers
+    if any(bot in user_agent for bot in bots):
+        abort(403)  # Forbidden
+        
+    # Check if IP is from Alibaba Cloud
+    client_ip = request.remote_addr
+    if ip_blocker.is_blocked(client_ip):
         abort(403)  # Forbidden
 
 @app.after_request
