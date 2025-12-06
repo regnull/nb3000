@@ -1,3 +1,4 @@
 Flask==3.1.2
 pymongo==4.15.5
 dateparser==1.2.2
+python-dotenv==1.2.1
