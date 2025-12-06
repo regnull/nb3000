@@ -3,7 +3,7 @@ from typing import List, Any, Union, Dict
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai.embeddings import OpenAIEmbeddings
-from langchain.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 import json # For formatting input to LLMs if needed

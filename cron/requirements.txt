@@ -1,0 +1,10 @@
+requests==2.32.5
+beautifulsoup4==4.14.3
+pymongo==4.15.5
+dateparser==1.2.2
+python-dotenv==1.2.1
+pytz==2025.2
+langchain-openai==1.1.0
+langchain==1.1.2
+langchain-community==0.4.1
+pydantic==2.12.5
